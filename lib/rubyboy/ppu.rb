@@ -17,15 +17,15 @@ module Rubyboy
 
     def step(cycles)
       @cycles += cycles
-      if @cycles >= 456
-        @cycles -= 456
-        @ly = (@ly + 1) % 154
-      end
+      return if @cycles < 456
+
+      @cycles -= 456
+      @ly = (@ly + 1) % 154
     end
 
     def draw_bg
-      tile_map_addr = @lcdc[3] == 0 ? 0x9800 : 0x9c00
-      tile_data_addr = @lcdc[4] == 0 ? 0x9000 : 0x8000
+      tile_map_addr = @lcdc[3].zero? ? 0x9800 : 0x9c00
+      tile_data_addr = @lcdc[4].zero? ? 0x9000 : 0x8000
 
       bg = Array.new(256) { Array.new(256, 0x00) }
 
@@ -38,12 +38,12 @@ module Rubyboy
           tile = @vram[tile_data_addr - 0x8000 + tile_index * 16, 16]
 
           8.times do |i|
-            pixelsa = tile[i*2]
-            pixelsb = tile[i*2+1]
+            pixelsa = tile[i * 2]
+            pixelsb = tile[i * 2 + 1]
 
             8.times do |j|
-              c = (pixelsb[7-j] << 1) + pixelsa[7-j]
-              bg[y*8+i][x*8+j] = get_color(c)
+              c = (pixelsb[7 - j] << 1) + pixelsa[7 - j]
+              bg[y * 8 + i][x * 8 + j] = get_color(c)
             end
           end
         end
@@ -52,7 +52,7 @@ module Rubyboy
 
       144.times do |y|
         160.times do |x|
-          view_port[y][x] = bg[(y+@scy) % 144][(x+@scx) % 160]
+          view_port[y][x] = bg[(y + @scy) % 144][(x + @scx) % 160]
         end
       end
       view_port

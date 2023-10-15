@@ -19,29 +19,29 @@ module Rubyboy
       @bus = bus
     end
 
-    def get_bc
+    def bc
       (@b << 8) + @c
     end
 
-    def set_bc(value)
+    def bc=(value)
       @b = value >> 8
       @c = value & 0xff
     end
 
-    def get_de
+    def de
       (@d << 8) + @e
     end
 
-    def set_de(value)
+    def de=(value)
       @d = value >> 8
       @e = value & 0xff
     end
 
-    def get_hl
+    def hl
       (@h << 8) + @l
     end
 
-    def set_hl(value)
+    def hl=(value)
       @h = value >> 8
       @l = value & 0xff
     end
@@ -60,16 +60,16 @@ module Rubyboy
         @b = @bus.read_byte(@pc)
         increment_pc
       when 0x0b # DEC BC
-        set_bc(get_bc - 1)
+        self.bc = bc - 1
       when 0x11 # LD DE, nn
         @e = @bus.read_byte(@pc)
         increment_pc
         @d = @bus.read_byte(@pc)
         increment_pc
       when 0x13 # INC DE
-        set_de(get_de + 1)
+        self.de = de + 1
       when 0x1a # LD A, (DE)
-        @a = @bus.read_byte(get_de)
+        @a = @bus.read_byte(de)
       when 0x18 # JR r8
         byte = to_signed_byte(@bus.read_byte(@pc))
         increment_pc
@@ -77,24 +77,24 @@ module Rubyboy
       when 0x20 # JR NZ, r8
         byte = to_signed_byte(@bus.read_byte(@pc))
         increment_pc
-        @pc += byte if !get_flags[:z]
+        @pc += byte unless flags[:z]
       when 0x21 # LD HL, nn
         @l = @bus.read_byte(@pc)
         increment_pc
         @h = @bus.read_byte(@pc)
         increment_pc
       when 0x22 # LD (HL+), A
-        @bus.write_byte(get_hl, @a)
-        set_hl(get_hl + 1)
+        @bus.write_byte(hl, @a)
+        self.hl = hl + 1
       when 0x38 # JR C, r8
         byte = to_signed_byte(@bus.read_byte(@pc))
         increment_pc
-        @pc += byte if get_flags[:c]
+        @pc += byte if flags[:c]
       when 0x3e # LD A, d8
         @a = @bus.read_byte(@pc)
         increment_pc
       when 0x40 # LD B, B
-        @b = @b
+        # @b = @b
       when 0x42 # LD B, D
         @b = @d
       when 0x43 # LD B, E
@@ -104,7 +104,7 @@ module Rubyboy
       when 0xa7 # AND A
         @a &= @a
         update_flags(
-          z: @a == 0,
+          z: @a.zero?,
           n: false,
           h: true,
           c: false
@@ -112,7 +112,7 @@ module Rubyboy
       when 0xaf # XOR A
         @a ^= @a
         update_flags(
-          z: @a == 0,
+          z: @a.zero?,
           n: false,
           h: false,
           c: false
@@ -120,7 +120,7 @@ module Rubyboy
       when 0xb1 # OR C
         @a |= @c
         update_flags(
-          z: @a == 0,
+          z: @a.zero?,
           n: false,
           h: false,
           c: false
@@ -161,7 +161,7 @@ module Rubyboy
       puts "OP: 0x#{'%02x' % opcode}, PC: 0x#{'%04x' % @pc}, SP: 0x#{'%04x' % @sp}, A: 0x#{'%02x' % @a}, B: 0x#{'%02x' % @b}, C: 0x#{'%02x' % @c}, D: 0x#{'%02x' % @d}, E: 0x#{'%02x' % @e}, H: 0x#{'%02x' % @h}, L: 0x#{'%02x' % @l}, F: 0x#{'%02x' % @f}"
     end
 
-    def get_flags
+    def flags
       {
         z: @f[7] == 1,
         n: @f[6] == 1,

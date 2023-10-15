@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'gosu'
-require_relative "rubyboy/version"
+require_relative 'rubyboy/version'
 require_relative 'rubyboy/bus'
 require_relative 'rubyboy/cpu'
 require_relative 'rubyboy/ppu'
@@ -30,8 +30,7 @@ module Rubyboy
         @ppu.step(cycles)
       end
       @total_cycles -= 70224
-
-    rescue => e
+    rescue StandardError => e
       p e
     end
 

@@ -27,7 +27,7 @@ module Rubyboy
 
       # 0x104 - 0x133: Nintendo Logo
       @logo = @data[0x104..0x133]
-      raise 'logo is not match' unless LOGO_DUMP == @logo
+      raise 'logo is not match' unless @logo == LOGO_DUMP
 
       # 0x134 - 0x143: Title
       @title = @data[0x134..0x143]
