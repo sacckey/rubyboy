@@ -58,5 +58,10 @@ module Rubyboy
     def read_word(addr)
       read_byte(addr) + (read_byte(addr + 1) << 8)
     end
+
+    def write_word(addr, value)
+      write_byte(addr, value & 0xff)
+      write_byte(addr + 1, value >> 8)
+    end
   end
 end
