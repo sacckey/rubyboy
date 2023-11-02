@@ -5,6 +5,9 @@ AllCops:
 Lint/AmbiguousOperatorPrecedence:
   Enabled: false
 
+Lint/DuplicateBranch:
+  Enabled: false
+
 Layout/LineLength:
   Enabled: false
 
