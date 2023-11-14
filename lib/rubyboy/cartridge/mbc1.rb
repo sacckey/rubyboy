@@ -5,9 +5,9 @@ require_relative '../ram'
 module Rubyboy
   module Cartridge
     class Mbc1
-      def initialize(rom)
+      def initialize(rom, ram)
         @rom = rom
-        @ram = Ram.new
+        @ram = ram
         @rom_bank = 1
         @ram_bank = 0
         @ram_enable = false
