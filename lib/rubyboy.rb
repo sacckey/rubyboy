@@ -1,11 +1,13 @@
 # frozen_string_literal: true
 
 require 'gosu'
+require 'benchmark'
 require_relative 'rubyboy/version'
 require_relative 'rubyboy/bus'
 require_relative 'rubyboy/cpu'
 require_relative 'rubyboy/ppu'
 require_relative 'rubyboy/rom'
+require_relative 'rubyboy/timer'
 
 module Rubyboy
   class Console < Gosu::Window
@@ -18,8 +20,10 @@ module Rubyboy
       @total_cycles = 0
 
       rom = Rom.new(rom_data)
+      interrupt = Interrupt.new
       @ppu = Ppu.new
-      @bus = Bus.new(@ppu, rom)
+      @timer = Timer.new(interrupt)
+      @bus = Bus.new(@ppu, rom, @timer, interrupt)
       @cpu = Cpu.new(@bus)
     end
 
@@ -27,11 +31,13 @@ module Rubyboy
       while @total_cycles < 70224
         cycles = @cpu.exec
         @total_cycles += cycles
+        @timer.step(cycles)
         @ppu.step(cycles)
       end
       @total_cycles -= 70224
     rescue StandardError => e
-      p e
+      p e.to_s[0, 100]
+      raise e
     end
 
     def draw
@@ -52,5 +58,5 @@ module Rubyboy
   end
 end
 
-rom_data = File.open(File.expand_path('roms/hello-world.gb', __dir__), 'r') { _1.read.bytes }
+rom_data = File.open(File.expand_path('roms/cpu_instrs/cpu_instrs.gb', __dir__), 'r') { _1.read.bytes }
 Rubyboy::Console.new(rom_data).show
