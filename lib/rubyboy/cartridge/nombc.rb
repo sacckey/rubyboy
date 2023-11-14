@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module Rubyboy
-  module Mbc
+  module Cartridge
     class Nombc
       def initialize(rom)
         @rom = rom
