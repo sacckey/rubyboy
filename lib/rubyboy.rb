@@ -41,12 +41,9 @@ module Rubyboy
     end
 
     def draw
-      bg = @ppu.draw_bg
-      bg.each_with_index do |xarray, i|
-        xarray.each_with_index do |c, j|
-          draw_pixel(j, i, c)
-        end
-      end
+      pixel_data = @ppu.draw_bg.flatten.pack('C*')
+      @image = Gosu::Image.from_blob(160, 144, pixel_data)
+      @image.draw(0, 0, 0, SCALE, SCALE)
     end
 
     def draw_pixel(x, y, color)
