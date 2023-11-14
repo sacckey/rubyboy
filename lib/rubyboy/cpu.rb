@@ -523,9 +523,7 @@ module Rubyboy
       when 0x75 # LD (HL), L
         write_byte(hl, @l.value)
       when 0x76 # HALT
-        unless @bus.interrupt.interrupts.positive?
-          @pc -= 1
-        end
+        @pc -= 1 unless @bus.interrupt.interrupts.positive?
       when 0x77 # LD (HL), A
         write_byte(hl, @a.value)
       when 0x78 # LD A, B

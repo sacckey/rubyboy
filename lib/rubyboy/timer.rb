@@ -21,21 +21,22 @@ module Rubyboy
       @div += after_cycles / 256 - before_cycles / 256
       @div &= 0xffff
 
-      if @tac[2] == 1
-        divider = case @tac & 0b11
-                  when 0b00 then 1024
-                  when 0b01 then 16
-                  when 0b10 then 64
-                  when 0b11 then 256
-                  end
+      return if @tac[2].zero?
 
-        tima_diff = (after_cycles / divider - before_cycles / divider)
-        @tima += tima_diff
-        if @tima >= 256
-          @tima &= 0xff
-          @interrupt.request(0b0000_0100)
-        end
-      end
+      divider = case @tac & 0b11
+                when 0b00 then 1024
+                when 0b01 then 16
+                when 0b10 then 64
+                when 0b11 then 256
+                end
+
+      tima_diff = (after_cycles / divider - before_cycles / divider)
+      @tima += tima_diff
+
+      return if @tima < 256
+
+      @tima &= 0xff
+      @interrupt.request(0b0000_0100)
     end
 
     def read_byte(byte)
