@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    rubyboy (0.1.0)
+    rubyboy (0.2.0)
       gosu (~> 1.4)
 
 GEM
