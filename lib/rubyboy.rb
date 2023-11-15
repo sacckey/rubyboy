@@ -28,22 +28,29 @@ module Rubyboy
     end
 
     def update
-      while @total_cycles < 70224
+      vsync = false
+      until vsync
         cycles = @cpu.exec
         @total_cycles += cycles
         @timer.step(cycles)
-        @ppu.step(cycles)
+        vsync = @ppu.step(cycles)
       end
-      @total_cycles -= 70224
+      @total_cycles = 0
     rescue StandardError => e
       p e.to_s[0, 100]
       raise e
     end
 
     def draw
-      pixel_data = @ppu.draw_bg.flatten.pack('C*')
+      pixel_data = buffer_to_pixel_data(@ppu.buffer)
       @image = Gosu::Image.from_blob(160, 144, pixel_data)
       @image.draw(0, 0, 0, SCALE, SCALE)
+    end
+
+    def buffer_to_pixel_data(buffer)
+      buffer.map do |row|
+        [row, row, row, 0xff]
+      end.flatten.pack('C*')
     end
 
     def draw_pixel(x, y, color)
