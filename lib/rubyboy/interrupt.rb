@@ -11,6 +11,24 @@ module Rubyboy
       @if = 0
     end
 
+    def read_byte(addr)
+      case addr
+      when 0xff0f
+        @if
+      when 0xffff
+        @ie
+      end
+    end
+
+    def write_byte(addr, value)
+      case addr
+      when 0xff0f
+        @if = value
+      when 0xffff
+        @ie = value
+      end
+    end
+
     def interrupts
       @if & @ie & 0x1f
     end
