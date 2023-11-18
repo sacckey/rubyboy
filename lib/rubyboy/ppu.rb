@@ -160,7 +160,7 @@ module Rubyboy
         x = (i + @scx) % 256
         tile_index = get_tile_index(@lcdc[3], x, y)
         pixel = get_pixel(tile_index, x, y)
-        @buffer[@ly * LCD_WIDTH + i] = get_color(pixel)
+        @buffer[@ly * LCD_WIDTH + i] = get_color(@bgp, pixel)
       end
     end
 
@@ -176,9 +176,50 @@ module Rubyboy
         x = i - (@wx - 7)
         tile_index = get_tile_index(@lcdc[6], x, y)
         pixel = get_pixel(tile_index, x, y)
-        @buffer[@ly * LCD_WIDTH + i] = get_color(pixel)
+        @buffer[@ly * LCD_WIDTH + i] = get_color(@bgp, pixel)
       end
       @wly += 1 if rendered
+    end
+
+    def render_sprites
+      return if @lcdc[1].zero?
+
+      sprite_height = @lcdc[2].zero? ? 8 : 16
+
+      sprites = @oam.each_slice(4).filter_map do |sprite_attr|
+        sprite = {
+          y: (sprite_attr[0] - 16) % 256,
+          x: (sprite_attr[1] - 8) % 256,
+          tile_index: sprite_attr[2],
+          flags: sprite_attr[3]
+        }
+        next if sprite[:y] > @ly || sprite[:y] + sprite_height <= @ly
+
+        sprite
+      end
+      sprites.take(10).reverse.sort_by { _1[:x] }
+
+      sprites.each do |sprite|
+        pallet = sprite[:flags][4].zero? ? @obp0 : @obp1
+        tile_index = sprite[:tile_index]
+        tile_index &= 0xfe if sprite_height == 16
+        y = (@ly - sprite[:y]) % 256
+        y = sprite_height - y - 1 if sprite[:flags][6] == 1
+        tile_index = (tile_index + 1) % 256 if y >= 8
+        y %= 8
+
+        8.times do |x|
+          x_flipped = sprite[:flags][5] == 1 ? 7 - x : x
+
+          pixel = get_pixel(tile_index, x_flipped, y)
+          i = (sprite[:x] + x) % 256
+
+          next if pixel.zero? || i >= LCD_WIDTH
+          next if sprite[:flags][7] == 1 && @buffer[@ly * LCD_WIDTH + i] != 0xff
+
+          @buffer[@ly * LCD_WIDTH + i] = get_color(pallet, pixel)
+        end
+      end
     end
 
     private
@@ -194,8 +235,8 @@ module Rubyboy
       @vram[tile_index * 16 + (y % 8) * 2][7 - (x % 8)] + (@vram[tile_index * 16 + (y % 8) * 2 + 1][7 - (x % 8)] << 1)
     end
 
-    def get_color(pixel)
-      case (@bgp >> (pixel * 2)) & 0b11
+    def get_color(pallet, pixel)
+      case (pallet >> (pixel * 2)) & 0b11
       when 0 then 0xff
       when 1 then 0xaa
       when 2 then 0x55
