@@ -12,6 +12,8 @@ module Rubyboy
           Nombc.new(rom)
         when 0x01..0x03
           Mbc1.new(rom, ram)
+        when 0x08..0x09
+          Nombc.new(rom)
         else
           raise "Unsupported cartridge type: #{cartridge_type}"
         end
