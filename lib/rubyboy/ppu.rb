@@ -34,6 +34,7 @@ module Rubyboy
       @bgp = 0x00
       @vram = Array.new(0x2000, 0x00)
       @oam = Array.new(0xa0, 0x00)
+      @wly = 0x00
       @cycles = 0
       @buffer = Array.new(144 * 160, 0x00)
     end
@@ -140,6 +141,7 @@ module Rubyboy
 
           if @ly == 154
             @ly = 0
+            @wly = 0
             handle_ly_eq_lyc
             @mode = MODE[:oam_scan]
             res = true
@@ -156,16 +158,33 @@ module Rubyboy
       y = (@ly + @scy) % 256
       LCD_WIDTH.times do |i|
         x = (i + @scx) % 256
-        tile_index = get_tile_index(x, y)
+        tile_index = get_tile_index(@lcdc[3], x, y)
         pixel = get_pixel(tile_index, x, y)
         @buffer[@ly * LCD_WIDTH + i] = get_color(pixel)
       end
     end
 
+    def render_window
+      return if @lcdc[0].zero? || @lcdc[5].zero? || @ly < @wy
+
+      rendered = false
+      y = @wly
+      LCD_WIDTH.times do |i|
+        next if i < @wx - 7
+
+        rendered = true
+        x = i - (@wx - 7)
+        tile_index = get_tile_index(@lcdc[6], x, y)
+        pixel = get_pixel(tile_index, x, y)
+        @buffer[@ly * LCD_WIDTH + i] = get_color(pixel)
+      end
+      @wly += 1 if rendered
+    end
+
     private
 
-    def get_tile_index(x, y)
-      tile_map_addr = @lcdc[3].zero? ? 0x1800 : 0x1c00
+    def get_tile_index(tile_map_area, x, y)
+      tile_map_addr = tile_map_area.zero? ? 0x1800 : 0x1c00
       tile_map_index = (y / 8) * 32 + (x / 8)
       tile_index = @vram[tile_map_addr + tile_map_index]
       @lcdc[4].zero? ? to_signed_byte(tile_index) + 256 : tile_index
