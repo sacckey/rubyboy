@@ -19,7 +19,7 @@ module Rubyboy
     HBLANK_CYCLES = 204
     ONE_LINE_CYCLES = OAM_SCAN_CYCLES + DRAWING_CYCLES + HBLANK_CYCLES
 
-    def initialize
+    def initialize(interrupt)
       @mode = MODE[:oam_scan]
       @lcdc = 0x00
       @stat = 0x00
@@ -36,6 +36,7 @@ module Rubyboy
       @oam = Array.new(0xa0, 0x00)
       @wly = 0x00
       @cycles = 0
+      @interrupt = interrupt
       @buffer = Array.new(144 * 160, 0x00)
     end
 
@@ -118,8 +119,11 @@ module Rubyboy
       when MODE[:drawing]
         if @cycles >= DRAWING_CYCLES
           render_bg
+          render_window
+          render_sprites
           @cycles -= DRAWING_CYCLES
           @mode = MODE[:hblank]
+          @interrupt.request(0b0000_0010) if @stat[3] == 1
         end
       when MODE[:hblank]
         if @cycles >= HBLANK_CYCLES
@@ -129,8 +133,11 @@ module Rubyboy
 
           if @ly == LCD_HEIGHT
             @mode = MODE[:vblank]
+            @interrupt.request(0b0000_0001)
+            @interrupt.request(0b0000_0010) if @stat[4] == 1
           else
             @mode = MODE[:oam_scan]
+            @interrupt.request(0b0000_0010) if @stat[5] == 1
           end
         end
       when MODE[:vblank]
@@ -144,6 +151,7 @@ module Rubyboy
             @wly = 0
             handle_ly_eq_lyc
             @mode = MODE[:oam_scan]
+            @interrupt.request(0b0000_0010) if @stat[5] == 1
             res = true
           end
         end
@@ -252,6 +260,7 @@ module Rubyboy
     def handle_ly_eq_lyc
       if @ly == @lyc
         @stat |= 0x04
+        @interrupt.request(0b0000_0010) if @stat[6] == 1
       else
         @stat &= 0xfb
       end

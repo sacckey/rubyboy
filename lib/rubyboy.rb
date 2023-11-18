@@ -14,7 +14,7 @@ module Rubyboy
     def initialize(rom_data)
       rom = Rom.new(rom_data)
       interrupt = Interrupt.new
-      @ppu = Ppu.new
+      @ppu = Ppu.new(interrupt)
       @timer = Timer.new(interrupt)
       @bus = Bus.new(@ppu, rom, @timer, interrupt)
       @cpu = Cpu.new(@bus)
