@@ -43,11 +43,9 @@ module Rubyboy
         case addr
         when 0x0000..0x1fff
           @ram_enable = value & 0x0f == 0x0a
-          @rom.data[addr] = value
         when 0x2000..0x3fff
           @rom_bank = value & 0x1f
           @rom_bank = 1 if @rom_bank.zero?
-          @rom.data[addr] = value
         when 0x4000..0x5fff
           @ram_bank = value & 0x03
         when 0x6000..0x7fff
