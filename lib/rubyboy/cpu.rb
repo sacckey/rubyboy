@@ -85,12 +85,12 @@ module Rubyboy
 
           @bus.interrupt.if &= (~(1 << i)) & 0xff
           @ime = false
-          @bus.write_word(@sp - 2, @pc)
           @sp -= 2
+          @bus.write_word(@sp, @pc)
           @pc = pcs[i]
-          opcode = read_byte(@pc)
           break
         end
+        return 20
       end
 
       if @ime_delay
