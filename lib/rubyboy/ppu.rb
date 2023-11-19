@@ -21,7 +21,7 @@ module Rubyboy
 
     def initialize(interrupt)
       @mode = MODE[:oam_scan]
-      @lcdc = 0x00
+      @lcdc = 0x91
       @stat = 0x00
       @scy = 0x00
       @scx = 0x00
