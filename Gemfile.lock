@@ -1,8 +1,8 @@
 PATH
   remote: .
   specs:
-    rubyboy (0.2.0)
-      gosu (~> 1.4)
+    rubyboy (0.3.0)
+      raylib-bindings (~> 0.5.7)
 
 GEM
   remote: https://rubygems.org/
@@ -10,9 +10,10 @@ GEM
     ast (2.4.2)
     base64 (0.1.1)
     diff-lcs (1.5.0)
-    gosu (1.4.6)
+    ffi (1.16.3)
     json (2.6.3)
     language_server-protocol (3.17.0.3)
+    opengl-bindings2 (2.0.1)
     parallel (1.23.0)
     parser (3.2.2.4)
       ast (~> 2.4.1)
@@ -20,6 +21,9 @@ GEM
     racc (1.7.1)
     rainbow (3.1.1)
     rake (13.0.6)
+    raylib-bindings (0.5.7)
+      ffi (~> 1.16)
+      opengl-bindings2 (~> 2)
     regexp_parser (2.8.2)
     rexml (3.2.6)
     rspec (3.12.0)

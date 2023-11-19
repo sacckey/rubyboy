@@ -1,5 +1,15 @@
 ## [Unreleased]
 
+## [0.3.0] - 2023-11-19
+
+- Fix bg rendering
+- Add render_window
+- Add render_sprites
+- Add interrupt in ppu
+- Add oam_dma_transfer
+- Use raylib for rendering
+- Pass dmg-acid2 test
+
 ## [0.2.0] - 2023-11-14
 
 - Add MBC1
