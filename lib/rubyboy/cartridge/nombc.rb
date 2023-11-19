@@ -8,7 +8,12 @@ module Rubyboy
       end
 
       def read_byte(addr)
-        @rom.data[addr]
+        case addr
+        when 0x0000..0x7fff
+          @rom.data[addr]
+        else
+          raise "not implemented: read_byte #{addr}"
+        end
       end
 
       def write_byte(_addr, _value)

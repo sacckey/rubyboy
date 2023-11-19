@@ -28,8 +28,12 @@ module Rubyboy
         @mbc.read_byte(addr)
       when 0x8000..0x9fff
         @ppu.read_byte(addr)
-      when 0xa000..0xdfff
+      when 0xa000..0xbfff
         @mbc.read_byte(addr)
+      when 0xc000..0xcfff
+        @ram.wram1[addr - 0xc000]
+      when 0xd000..0xdfff
+        @ram.wram2[addr - 0xd000]
       when 0xe000..0xfdff
         # echo ram
       when 0xfe00..0xfe9f
@@ -85,8 +89,12 @@ module Rubyboy
         @mbc.write_byte(addr, value)
       when 0x8000..0x9fff
         @ppu.write_byte(addr, value)
-      when 0xa000..0xdfff
+      when 0xa000..0xbfff
         @mbc.write_byte(addr, value)
+      when 0xc000..0xcfff
+        @ram.wram1[addr - 0xc000] = value
+      when 0xd000..0xdfff
+        @ram.wram2[addr - 0xd000] = value
       when 0xe000..0xfdff
         # echo ram
       when 0xfe00..0xfe9f

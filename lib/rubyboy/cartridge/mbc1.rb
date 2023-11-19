@@ -30,10 +30,6 @@ module Rubyboy
           else
             0xff
           end
-        when 0xc000..0xcfff
-          @ram.wram1[addr - 0xc000]
-        when 0xd000..0xdfff
-          @ram.wram2[addr - 0xd000]
         else
           raise "not implemented: read_byte #{addr}"
         end
@@ -58,10 +54,6 @@ module Rubyboy
               @ram.eram[addr - 0xa000] = value
             end
           end
-        when 0xc000..0xcfff
-          @ram.wram1[addr - 0xc000] = value
-        when 0xd000..0xdfff
-          @ram.wram2[addr - 0xd000] = value
         end
       end
     end
