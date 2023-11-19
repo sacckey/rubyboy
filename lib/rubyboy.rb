@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'raylib'
 require 'benchmark'
 require_relative 'rubyboy/version'
 require_relative 'rubyboy/bus'
@@ -8,21 +9,27 @@ require_relative 'rubyboy/ppu'
 require_relative 'rubyboy/rom'
 require_relative 'rubyboy/timer'
 require_relative 'rubyboy/lcd'
+require_relative 'rubyboy/joypad'
 
 module Rubyboy
   class Console
+    include Raylib
+
     def initialize(rom_data)
+      load_raylib
       rom = Rom.new(rom_data)
       interrupt = Interrupt.new
       @ppu = Ppu.new(interrupt)
       @timer = Timer.new(interrupt)
-      @bus = Bus.new(@ppu, rom, @timer, interrupt)
+      @joypad = Joypad.new(interrupt)
+      @bus = Bus.new(@ppu, rom, @timer, interrupt, @joypad)
       @cpu = Cpu.new(@bus)
       @lcd = Lcd.new
     end
 
     def start
       until @lcd.window_should_close?
+        key_input_check
         cycles = @cpu.exec
         @timer.step(cycles)
         draw if @ppu.step(cycles)
@@ -32,6 +39,8 @@ module Rubyboy
       p e.to_s[0, 100]
       raise e
     end
+
+    private
 
     def draw
       pixel_data = buffer_to_pixel_data(@ppu.buffer)
@@ -43,8 +52,32 @@ module Rubyboy
         [row, row, row]
       end.flatten.pack('C*')
     end
+
+    def key_input_check
+      direction = (IsKeyUp(KEY_D) && 1 || 0) | ((IsKeyUp(KEY_A) && 1 || 0) << 1) | ((IsKeyUp(KEY_W) && 1 || 0) << 2) | ((IsKeyUp(KEY_S) && 1 || 0) << 3)
+      action = (IsKeyUp(KEY_K) && 1 || 0) | ((IsKeyUp(KEY_J) && 1 || 0) << 1) | ((IsKeyUp(KEY_U) && 1 || 0) << 2) | ((IsKeyUp(KEY_I) && 1 || 0) << 3)
+      @joypad.direction_button(direction)
+      @joypad.action_button(action)
+    end
+
+    def load_raylib
+      shared_lib_path = "#{Gem::Specification.find_by_name('raylib-bindings').full_gem_path}/lib/"
+      case RUBY_PLATFORM
+      when /mswin|msys|mingw/ # Windows
+        Raylib.load_lib("#{shared_lib_path}libraylib.dll")
+      when /darwin/ # macOS
+        Raylib.load_lib("#{shared_lib_path}libraylib.dylib")
+      when /linux/ # Ubuntu Linux (x86_64 or aarch64)
+        arch = RUBY_PLATFORM.split('-')[0]
+        Raylib.load_lib(shared_lib_path + "libraylib.#{arch}.so")
+      else
+        raise "Unknown system: #{RUBY_PLATFORM}"
+      end
+
+      SetTraceLogLevel(LOG_ERROR)
+    end
   end
 end
 
-rom_data = File.open(File.expand_path('roms/cpu_instrs/cpu_instrs.gb', __dir__), 'r') { _1.read.bytes }
+rom_data = File.open(File.expand_path('roms/bgbtest.gb', __dir__), 'r') { _1.read.bytes }
 Rubyboy::Console.new(rom_data).start

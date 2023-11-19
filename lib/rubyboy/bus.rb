@@ -8,11 +8,12 @@ module Rubyboy
   class Bus
     attr_accessor :ppu, :rom, :interrupt
 
-    def initialize(ppu, rom, timer, interrupt)
+    def initialize(ppu, rom, timer, interrupt, joypad)
       @ppu = ppu
       @rom = rom
       @ram = Ram.new
       @mbc = Cartridge::Factory.create(rom, @ram)
+      @joypad = joypad
 
       @interrupt = interrupt
       @timer = timer
@@ -42,8 +43,7 @@ module Rubyboy
         # unused
         0xff
       when 0xff00
-        # joypad
-        @tmp[addr] ||= 0
+        @joypad.read_byte(addr)
       when 0xff01..0xff02
         # serial
         @tmp[addr] ||= 0
@@ -102,8 +102,7 @@ module Rubyboy
       when 0xfea0..0xfeff
         # unused
       when 0xff00
-        # joypad
-        @tmp[addr] = value
+        @joypad.write_byte(addr, value)
       when 0xff01..0xff02
         # serial
         @tmp[addr] = value
