@@ -205,7 +205,7 @@ module Rubyboy
 
         sprite
       end
-      sprites.take(10).reverse.sort_by { _1[:x] }
+      sprites = sprites.take(10).sort_by.with_index { |sprite, i| [-sprite[:x], -i] }
 
       sprites.each do |sprite|
         pallet = sprite[:flags][4].zero? ? @obp0 : @obp1
