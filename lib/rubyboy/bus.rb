@@ -117,6 +117,10 @@ module Rubyboy
       when 0xff30..0xff3f
         # wave pattern ram
         @tmp[addr] = value
+      when 0xff46
+        0xa0.times do |i|
+          write_byte(0xfe00 + i, read_byte((value << 8) + i))
+        end
       when 0xff40..0xff4b
         @ppu.write_byte(addr, value)
       when 0xff4f
