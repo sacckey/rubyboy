@@ -38,6 +38,7 @@ module Rubyboy
       @cycles = 0
       @interrupt = interrupt
       @buffer = Array.new(144 * 160, 0x00)
+      @bg_pixels = Array.new(LCD_WIDTH, 0x00)
     end
 
     def read_byte(addr)
@@ -169,6 +170,7 @@ module Rubyboy
         tile_index = get_tile_index(@lcdc[3], x, y)
         pixel = get_pixel(tile_index, x, y)
         @buffer[@ly * LCD_WIDTH + i] = get_color(@bgp, pixel)
+        @bg_pixels[i] = pixel
       end
     end
 
@@ -185,6 +187,7 @@ module Rubyboy
         tile_index = get_tile_index(@lcdc[6], x, y)
         pixel = get_pixel(tile_index, x, y)
         @buffer[@ly * LCD_WIDTH + i] = get_color(@bgp, pixel)
+        @bg_pixels[i] = pixel
       end
       @wly += 1 if rendered
     end
@@ -223,7 +226,7 @@ module Rubyboy
           i = (sprite[:x] + x) % 256
 
           next if pixel.zero? || i >= LCD_WIDTH
-          next if sprite[:flags][7] == 1 && @buffer[@ly * LCD_WIDTH + i] != 0xff
+          next if sprite[:flags][7] == 1 && @bg_pixels[i] != 0
 
           @buffer[@ly * LCD_WIDTH + i] = get_color(pallet, pixel)
         end
