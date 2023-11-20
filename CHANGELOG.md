@@ -1,5 +1,12 @@
 ## [Unreleased]
 
+## [0.4.0] - 2023-11-20
+
+- Fix interrupt
+- Fix sprite priority
+- Implement joypad
+- Pass bgbtest
+
 ## [0.3.0] - 2023-11-19
 
 - Fix bg rendering
