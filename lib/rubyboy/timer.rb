@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require 'json'
-
 module Rubyboy
   class Timer
     def initialize(interrupt)
