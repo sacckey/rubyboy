@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    rubyboy (0.3.0)
+    rubyboy (0.4.0)
       raylib-bindings (~> 0.5.7)
 
 GEM
