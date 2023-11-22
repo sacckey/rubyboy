@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require 'json'
-
 module Rubyboy
   class Register
     attr_reader :value

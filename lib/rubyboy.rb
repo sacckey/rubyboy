@@ -29,10 +29,12 @@ module Rubyboy
 
     def start
       until @lcd.window_should_close?
-        key_input_check
         cycles = @cpu.exec
         @timer.step(cycles)
-        draw if @ppu.step(cycles)
+        if @ppu.step(cycles)
+          draw
+          key_input_check
+        end
       end
       @lcd.close_window
     rescue StandardError => e
