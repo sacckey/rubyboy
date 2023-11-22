@@ -33,7 +33,7 @@ module Rubyboy
 
       return if @tima < 256
 
-      @tima &= 0xff
+      @tima = @tma
       @interrupt.request(0b0000_0100)
     end
 
@@ -54,6 +54,7 @@ module Rubyboy
       case byte
       when 0xff04
         @div = 0
+        @cycles = 0
       when 0xff05
         @tima = value
       when 0xff06
