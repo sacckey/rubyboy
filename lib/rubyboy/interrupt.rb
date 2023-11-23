@@ -2,8 +2,6 @@
 
 module Rubyboy
   class Interrupt
-    attr_accessor :ie, :if
-
     def initialize
       @ie = 0
       @if = 0
@@ -33,6 +31,10 @@ module Rubyboy
 
     def request(interrupt)
       @if |= interrupt
+    end
+
+    def reset_flag(i)
+      @if &= (~(1 << i)) & 0xff
     end
   end
 end

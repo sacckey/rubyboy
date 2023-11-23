@@ -22,7 +22,7 @@ module Rubyboy
       @timer = Timer.new(interrupt)
       @joypad = Joypad.new(interrupt)
       @bus = Bus.new(@ppu, rom, @timer, interrupt, @joypad)
-      @cpu = Cpu.new(@bus)
+      @cpu = Cpu.new(@bus, interrupt)
       @lcd = Lcd.new
     end
 

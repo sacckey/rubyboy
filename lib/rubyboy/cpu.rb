@@ -5,7 +5,7 @@ require_relative 'register'
 
 module Rubyboy
   class Cpu
-    def initialize(bus)
+    def initialize(bus, interrupt)
       @a = Register.new(name: 'a', value: 0x01)
       @b = Register.new(name: 'b', value: 0x00)
       @c = Register.new(name: 'c', value: 0x13)
@@ -20,6 +20,7 @@ module Rubyboy
       @ime = false
       @ime_delay = false
       @bus = bus
+      @interrupt = interrupt
       @opcodes = File.open('lib/opcodes.json', 'r') { |file| JSON.parse(file.read) }
       @halted = false
 
@@ -70,13 +71,13 @@ module Rubyboy
       opcode = read_byte(@pc)
       # print_log(opcode)
 
-      @halted &= @bus.interrupt.interrupts.zero?
+      @halted &= @interrupt.interrupts.zero?
 
       return 16 if @halted
 
       in_interrupt = false
 
-      if @ime && @bus.interrupt.interrupts.positive?
+      if @ime && @interrupt.interrupts.positive?
         in_interrupt = true
       else
         increment_pc
@@ -85,9 +86,9 @@ module Rubyboy
       if in_interrupt
         pcs = [0x0040, 0x0048, 0x0050, 0x0058, 0x0060]
         5.times do |i|
-          next if @bus.interrupt.interrupts[i].zero?
+          next if @interrupt.interrupts[i].zero?
 
-          @bus.interrupt.if &= (~(1 << i)) & 0xff
+          @interrupt.reset_flag(i)
           @ime = false
           @sp -= 2
           @bus.write_word(@sp, @pc)
