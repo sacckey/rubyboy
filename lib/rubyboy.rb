@@ -1,8 +1,6 @@
 # frozen_string_literal: true
 
 require 'raylib'
-require 'benchmark'
-require_relative 'rubyboy/version'
 require_relative 'rubyboy/bus'
 require_relative 'rubyboy/cpu'
 require_relative 'rubyboy/ppu'
