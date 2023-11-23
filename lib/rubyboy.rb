@@ -15,8 +15,9 @@ module Rubyboy
   class Console
     include Raylib
 
-    def initialize(rom_data)
+    def initialize(rom_path)
       load_raylib
+      rom_data = File.open(File.expand_path(rom_path, __dir__), 'r') { _1.read.bytes }
       rom = Rom.new(rom_data)
       interrupt = Interrupt.new
       @ppu = Ppu.new(interrupt)
@@ -80,6 +81,3 @@ module Rubyboy
     end
   end
 end
-
-rom_data = File.open(File.expand_path('roms/bgbtest.gb', __dir__), 'r') { _1.read.bytes }
-Rubyboy::Console.new(rom_data).start
