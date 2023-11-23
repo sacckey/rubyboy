@@ -29,13 +29,13 @@ module Rubyboy
     def direction_button(button)
       @direction = button | 0xf0
 
-      @interupt.request(0b0001_0000) if button < 0b1111
+      @interupt.request(:joypad) if button < 0b1111
     end
 
     def action_button(button)
       @action = button | 0xf0
 
-      @interupt.request(0b0001_0000) if button < 0b1111
+      @interupt.request(:joypad) if button < 0b1111
     end
   end
 end

@@ -34,7 +34,7 @@ module Rubyboy
       return if @tima < 256
 
       @tima = @tma
-      @interrupt.request(0b0000_0100)
+      @interrupt.request(:timer)
     end
 
     def read_byte(byte)

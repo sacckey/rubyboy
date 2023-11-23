@@ -2,6 +2,14 @@
 
 module Rubyboy
   class Interrupt
+    INTERRUPTS = {
+      vblank: 0,
+      lcd: 1,
+      timer: 2,
+      serial: 3,
+      joypad: 4
+    }.freeze
+
     def initialize
       @ie = 0
       @if = 0
@@ -30,7 +38,7 @@ module Rubyboy
     end
 
     def request(interrupt)
-      @if |= interrupt
+      @if |= (1 << INTERRUPTS[interrupt])
     end
 
     def reset_flag(i)
