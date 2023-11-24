@@ -909,562 +909,331 @@ module Rubyboy
         opcode = read_byte_and_advance_pc
         cbprefixed = true
 
-        # p "CB #{opcode.to_s(16)}"
-
         case opcode
-        when 0x00 # RLC B
-          rlc8(@b)
-        when 0x01 # RLC C
-          rlc8(@c)
-        when 0x02 # RLC D
-          rlc8(@d)
-        when 0x03 # RLC E
-          rlc8(@e)
-        when 0x04 # RLC H
-          rlc8(@h)
-        when 0x05 # RLC L
-          rlc8(@l)
+        when 0x00 then rlc8(@b)
+        when 0x01 then rlc8(@c)
+        when 0x02 then rlc8(@d)
+        when 0x03 then rlc8(@e)
+        when 0x04 then rlc8(@h)
+        when 0x05 then rlc8(@l)
         when 0x06 # RLC (HL)
           reg = Register.new(name: 'HL', value: read_byte(hl))
           rlc8(reg)
           write_byte(hl, reg.value)
-        when 0x07 # RLC A
-          rlc8(@a)
-        when 0x08 # RRC B
-          rrc8(@b)
-        when 0x09 # RRC C
-          rrc8(@c)
-        when 0x0a # RRC D
-          rrc8(@d)
-        when 0x0b # RRC E
-          rrc8(@e)
-        when 0x0c # RRC H
-          rrc8(@h)
-        when 0x0d # RRC L
-          rrc8(@l)
+        when 0x07 then rlc8(@a)
+        when 0x08 then rrc8(@b)
+        when 0x09 then rrc8(@c)
+        when 0x0a then rrc8(@d)
+        when 0x0b then rrc8(@e)
+        when 0x0c then rrc8(@h)
+        when 0x0d then rrc8(@l)
         when 0x0e # RRC (HL)
           reg = Register.new(name: 'HL', value: read_byte(hl))
           rrc8(reg)
           write_byte(hl, reg.value)
-        when 0x0f # RRC A
-          rrc8(@a)
-        when 0x10 # RL B
-          rl8(@b)
-        when 0x11 # RL C
-          rl8(@c)
-        when 0x12 # RL D
-          rl8(@d)
-        when 0x13 # RL E
-          rl8(@e)
-        when 0x14 # RL H
-          rl8(@h)
-        when 0x15 # RL L
-          rl8(@l)
+        when 0x0f then rrc8(@a)
+        when 0x10 then rl8(@b)
+        when 0x11 then rl8(@c)
+        when 0x12 then rl8(@d)
+        when 0x13 then rl8(@e)
+        when 0x14 then rl8(@h)
+        when 0x15 then rl8(@l)
         when 0x16 # RL (HL)
           reg = Register.new(name: 'HL', value: read_byte(hl))
           rl8(reg)
           write_byte(hl, reg.value)
-        when 0x17 # RL A
-          rl8(@a)
-        when 0x18 # RR B
-          rr8(@b)
-        when 0x19 # RR C
-          rr8(@c)
-        when 0x1a # RR D
-          rr8(@d)
-        when 0x1b # RR E
-          rr8(@e)
-        when 0x1c # RR H
-          rr8(@h)
-        when 0x1d # RR L
-          rr8(@l)
+        when 0x17 then rl8(@a)
+        when 0x18 then rr8(@b)
+        when 0x19 then rr8(@c)
+        when 0x1a then rr8(@d)
+        when 0x1b then rr8(@e)
+        when 0x1c then rr8(@h)
+        when 0x1d then rr8(@l)
         when 0x1e # RR (HL)
           reg = Register.new(name: 'HL', value: read_byte(hl))
           rr8(reg)
           write_byte(hl, reg.value)
-        when 0x1f # RR A
-          rr8(@a)
-        when 0x20 # SLA B
-          sla8(@b)
-        when 0x21 # SLA C
-          sla8(@c)
-        when 0x22 # SLA D
-          sla8(@d)
-        when 0x23 # SLA E
-          sla8(@e)
-        when 0x24 # SLA H
-          sla8(@h)
-        when 0x25 # SLA L
-          sla8(@l)
+        when 0x1f then rr8(@a)
+        when 0x20 then sla8(@b)
+        when 0x21 then sla8(@c)
+        when 0x22 then sla8(@d)
+        when 0x23 then sla8(@e)
+        when 0x24 then sla8(@h)
+        when 0x25 then sla8(@l)
         when 0x26 # SLA (HL)
           reg = Register.new(name: 'HL', value: read_byte(hl))
           sla8(reg)
           write_byte(hl, reg.value)
-        when 0x27 # SLA A
-          sla8(@a)
-        when 0x28 # SRA B
-          sra8(@b)
-        when 0x29 # SRA C
-          sra8(@c)
-        when 0x2a # SRA D
-          sra8(@d)
-        when 0x2b # SRA E
-          sra8(@e)
-        when 0x2c # SRA H
-          sra8(@h)
-        when 0x2d # SRA L
-          sra8(@l)
+        when 0x27 then sla8(@a)
+        when 0x28 then sra8(@b)
+        when 0x29 then sra8(@c)
+        when 0x2a then sra8(@d)
+        when 0x2b then sra8(@e)
+        when 0x2c then sra8(@h)
+        when 0x2d then sra8(@l)
         when 0x2e # SRA (HL)
           reg = Register.new(name: 'HL', value: read_byte(hl))
           sra8(reg)
           write_byte(hl, reg.value)
-        when 0x2f # SRA A
-          sra8(@a)
-        when 0x30 # SWAP B
-          swap8(@b)
-        when 0x31 # SWAP C
-          swap8(@c)
-        when 0x32 # SWAP D
-          swap8(@d)
-        when 0x33 # SWAP E
-          swap8(@e)
-        when 0x34 # SWAP H
-          swap8(@h)
-        when 0x35 # SWAP L
-          swap8(@l)
+        when 0x2f then sra8(@a)
+        when 0x30 then swap8(@b)
+        when 0x31 then swap8(@c)
+        when 0x32 then swap8(@d)
+        when 0x33 then swap8(@e)
+        when 0x34 then swap8(@h)
+        when 0x35 then swap8(@l)
         when 0x36 # SWAP (HL)
           reg = Register.new(name: 'HL', value: read_byte(hl))
           swap8(reg)
           write_byte(hl, reg.value)
-        when 0x37 # SWAP A
-          swap8(@a)
-        when 0x38 # SRL B
-          srl8(@b)
-        when 0x39 # SRL C
-          srl8(@c)
-        when 0x3a # SRL D
-          srl8(@d)
-        when 0x3b # SRL E
-          srl8(@e)
-        when 0x3c # SRL H
-          srl8(@h)
-        when 0x3d # SRL L
-          srl8(@l)
+        when 0x37 then swap8(@a)
+        when 0x38 then srl8(@b)
+        when 0x39 then srl8(@c)
+        when 0x3a then srl8(@d)
+        when 0x3b then srl8(@e)
+        when 0x3c then srl8(@h)
+        when 0x3d then srl8(@l)
         when 0x3e # SRL (HL)
           reg = Register.new(name: 'HL', value: read_byte(hl))
           srl8(reg)
           write_byte(hl, reg.value)
-        when 0x3f # SRL A
-          srl8(@a)
-        when 0x40 # BIT 0, B
-          bit8(0, @b)
-        when 0x41 # BIT 0, C
-          bit8(0, @c)
-        when 0x42 # BIT 0, D
-          bit8(0, @d)
-        when 0x43 # BIT 0, E
-          bit8(0, @e)
-        when 0x44 # BIT 0, H
-          bit8(0, @h)
-        when 0x45 # BIT 0, L
-          bit8(0, @l)
-        when 0x46 # BIT 0, (HL)
-          bit8(0, Register.new(name: 'HL', value: read_byte(hl)))
-        when 0x47 # BIT 0, A
-          bit8(0, @a)
-        when 0x48 # BIT 1, B
-          bit8(1, @b)
-        when 0x49 # BIT 1, C
-          bit8(1, @c)
-        when 0x4a # BIT 1, D
-          bit8(1, @d)
-        when 0x4b # BIT 1, E
-          bit8(1, @e)
-        when 0x4c # BIT 1, H
-          bit8(1, @h)
-        when 0x4d # BIT 1, L
-          bit8(1, @l)
-        when 0x4e # BIT 1, (HL)
-          bit8(1, Register.new(name: 'HL', value: read_byte(hl)))
-        when 0x4f # BIT 1, A
-          bit8(1, @a)
-        when 0x50 # BIT 2, B
-          bit8(2, @b)
-        when 0x51 # BIT 2, C
-          bit8(2, @c)
-        when 0x52 # BIT 2, D
-          bit8(2, @d)
-        when 0x53 # BIT 2, E
-          bit8(2, @e)
-        when 0x54 # BIT 2, H
-          bit8(2, @h)
-        when 0x55 # BIT 2, L
-          bit8(2, @l)
-        when 0x56 # BIT 2, (HL)
-          bit8(2, Register.new(name: 'HL', value: read_byte(hl)))
-        when 0x57 # BIT 2, A
-          bit8(2, @a)
-        when 0x58 # BIT 3, B
-          bit8(3, @b)
-        when 0x59 # BIT 3, C
-          bit8(3, @c)
-        when 0x5a # BIT 3, D
-          bit8(3, @d)
-        when 0x5b # BIT 3, E
-          bit8(3, @e)
-        when 0x5c # BIT 3, H
-          bit8(3, @h)
-        when 0x5d # BIT 3, L
-          bit8(3, @l)
-        when 0x5e # BIT 3, (HL)
-          bit8(3, Register.new(name: 'HL', value: read_byte(hl)))
-        when 0x5f # BIT 3, A
-          bit8(3, @a)
-        when 0x60 # BIT 4, B
-          bit8(4, @b)
-        when 0x61 # BIT 4, C
-          bit8(4, @c)
-        when 0x62 # BIT 4, D
-          bit8(4, @d)
-        when 0x63 # BIT 4, E
-          bit8(4, @e)
-        when 0x64 # BIT 4, H
-          bit8(4, @h)
-        when 0x65 # BIT 4, L
-          bit8(4, @l)
-        when 0x66 # BIT 4, (HL)
-          bit8(4, Register.new(name: 'HL', value: read_byte(hl)))
-        when 0x67 # BIT 4, A
-          bit8(4, @a)
-        when 0x68 # BIT 5, B
-          bit8(5, @b)
-        when 0x69 # BIT 5, C
-          bit8(5, @c)
-        when 0x6a # BIT 5, D
-          bit8(5, @d)
-        when 0x6b # BIT 5, E
-          bit8(5, @e)
-        when 0x6c # BIT 5, H
-          bit8(5, @h)
-        when 0x6d # BIT 5, L
-          bit8(5, @l)
-        when 0x6e # BIT 5, (HL)
-          bit8(5, Register.new(name: 'HL', value: read_byte(hl)))
-        when 0x6f # BIT 5, A
-          bit8(5, @a)
-        when 0x70 # BIT 6, B
-          bit8(6, @b)
-        when 0x71 # BIT 6, C
-          bit8(6, @c)
-        when 0x72 # BIT 6, D
-          bit8(6, @d)
-        when 0x73 # BIT 6, E
-          bit8(6, @e)
-        when 0x74 # BIT 6, H
-          bit8(6, @h)
-        when 0x75 # BIT 6, L
-          bit8(6, @l)
-        when 0x76 # BIT 6, (HL)
-          bit8(6, Register.new(name: 'HL', value: read_byte(hl)))
-        when 0x77 # BIT 6, A
-          bit8(6, @a)
-        when 0x78 # BIT 7, B
-          bit8(7, @b)
-        when 0x79 # BIT 7, C
-          bit8(7, @c)
-        when 0x7a # BIT 7, D
-          bit8(7, @d)
-        when 0x7b # BIT 7, E
-          bit8(7, @e)
-        when 0x7c # BIT 7, H
-          bit8(7, @h)
-        when 0x7d # BIT 7, L
-          bit8(7, @l)
-        when 0x7e # BIT 7, (HL)
-          bit8(7, Register.new(name: 'HL', value: read_byte(hl)))
-        when 0x7f # BIT 7, A
-          bit8(7, @a)
-        when 0x80 # RES 0, B
-          res8(0, @b)
-        when 0x81 # RES 0, C
-          res8(0, @c)
-        when 0x82 # RES 0, D
-          res8(0, @d)
-        when 0x83 # RES 0, E
-          res8(0, @e)
-        when 0x84 # RES 0, H
-          res8(0, @h)
-        when 0x85 # RES 0, L
-          res8(0, @l)
-        when 0x86 # RES 0, (HL)
+        when 0x3f then srl8(@a)
+        when 0x40 then bit8(0, @b)
+        when 0x41 then bit8(0, @c)
+        when 0x42 then bit8(0, @d)
+        when 0x43 then bit8(0, @e)
+        when 0x44 then bit8(0, @h)
+        when 0x45 then bit8(0, @l)
+        when 0x46 then bit8(0, Register.new(name: 'HL', value: read_byte(hl)))
+        when 0x47 then bit8(0, @a)
+        when 0x48 then bit8(1, @b)
+        when 0x49 then bit8(1, @c)
+        when 0x4a then bit8(1, @d)
+        when 0x4b then bit8(1, @e)
+        when 0x4c then bit8(1, @h)
+        when 0x4d then bit8(1, @l)
+        when 0x4e then bit8(1, Register.new(name: 'HL', value: read_byte(hl)))
+        when 0x4f then bit8(1, @a)
+        when 0x50 then bit8(2, @b)
+        when 0x51 then bit8(2, @c)
+        when 0x52 then bit8(2, @d)
+        when 0x53 then bit8(2, @e)
+        when 0x54 then bit8(2, @h)
+        when 0x55 then bit8(2, @l)
+        when 0x56 then bit8(2, Register.new(name: 'HL', value: read_byte(hl)))
+        when 0x57 then bit8(2, @a)
+        when 0x58 then bit8(3, @b)
+        when 0x59 then bit8(3, @c)
+        when 0x5a then bit8(3, @d)
+        when 0x5b then bit8(3, @e)
+        when 0x5c then bit8(3, @h)
+        when 0x5d then bit8(3, @l)
+        when 0x5e then bit8(3, Register.new(name: 'HL', value: read_byte(hl)))
+        when 0x5f then bit8(3, @a)
+        when 0x60 then bit8(4, @b)
+        when 0x61 then bit8(4, @c)
+        when 0x62 then bit8(4, @d)
+        when 0x63 then bit8(4, @e)
+        when 0x64 then bit8(4, @h)
+        when 0x65 then bit8(4, @l)
+        when 0x66 then bit8(4, Register.new(name: 'HL', value: read_byte(hl)))
+        when 0x67 then bit8(4, @a)
+        when 0x68 then bit8(5, @b)
+        when 0x69 then bit8(5, @c)
+        when 0x6a then bit8(5, @d)
+        when 0x6b then bit8(5, @e)
+        when 0x6c then bit8(5, @h)
+        when 0x6d then bit8(5, @l)
+        when 0x6e then bit8(5, Register.new(name: 'HL', value: read_byte(hl)))
+        when 0x6f then bit8(5, @a)
+        when 0x70 then bit8(6, @b)
+        when 0x71 then bit8(6, @c)
+        when 0x72 then bit8(6, @d)
+        when 0x73 then bit8(6, @e)
+        when 0x74 then bit8(6, @h)
+        when 0x75 then bit8(6, @l)
+        when 0x76 then bit8(6, Register.new(name: 'HL', value: read_byte(hl)))
+        when 0x77 then bit8(6, @a)
+        when 0x78 then bit8(7, @b)
+        when 0x79 then bit8(7, @c)
+        when 0x7a then bit8(7, @d)
+        when 0x7b then bit8(7, @e)
+        when 0x7c then bit8(7, @h)
+        when 0x7d then bit8(7, @l)
+        when 0x7e then bit8(7, Register.new(name: 'HL', value: read_byte(hl)))
+        when 0x7f then bit8(7, @a)
+        when 0x80 then res8(0, @b)
+        when 0x81 then res8(0, @c)
+        when 0x82 then res8(0, @d)
+        when 0x83 then res8(0, @e)
+        when 0x84 then res8(0, @h)
+        when 0x85 then res8(0, @l)
+        when 0x86 then # 0, (HL)
           reg = Register.new(name: 'HL', value: read_byte(hl))
           res8(0, reg)
           write_byte(hl, reg.value)
-        when 0x87 # RES 0, A
-          res8(0, @a)
-        when 0x88 # RES 1, B
-          res8(1, @b)
-        when 0x89 # RES 1, C
-          res8(1, @c)
-        when 0x8a # RES 1, D
-          res8(1, @d)
-        when 0x8b # RES 1, E
-          res8(1, @e)
-        when 0x8c # RES 1, H
-          res8(1, @h)
-        when 0x8d # RES 1, L
-          res8(1, @l)
-        when 0x8e # RES 1, (HL)
+        when 0x87 then res8(0, @a)
+        when 0x88 then res8(1, @b)
+        when 0x89 then res8(1, @c)
+        when 0x8a then res8(1, @d)
+        when 0x8b then res8(1, @e)
+        when 0x8c then res8(1, @h)
+        when 0x8d then res8(1, @l)
+        when 0x8e then # 1, (HL)
           reg = Register.new(name: 'HL', value: read_byte(hl))
           res8(1, reg)
           write_byte(hl, reg.value)
-        when 0x8f # RES 1, A
-          res8(1, @a)
-        when 0x90 # RES 2, B
-          res8(2, @b)
-        when 0x91 # RES 2, C
-          res8(2, @c)
-        when 0x92 # RES 2, D
-          res8(2, @d)
-        when 0x93 # RES 2, E
-          res8(2, @e)
-        when 0x94 # RES 2, H
-          res8(2, @h)
-        when 0x95 # RES 2, L
-          res8(2, @l)
-        when 0x96 # RES 2, (HL)
+        when 0x8f then res8(1, @a)
+        when 0x90 then res8(2, @b)
+        when 0x91 then res8(2, @c)
+        when 0x92 then res8(2, @d)
+        when 0x93 then res8(2, @e)
+        when 0x94 then res8(2, @h)
+        when 0x95 then res8(2, @l)
+        when 0x96 then # 2, (HL)
           reg = Register.new(name: 'HL', value: read_byte(hl))
           res8(2, reg)
           write_byte(hl, reg.value)
-        when 0x97 # RES 2, A
-          res8(2, @a)
-        when 0x98 # RES 3, B
-          res8(3, @b)
-        when 0x99 # RES 3, C
-          res8(3, @c)
-        when 0x9a # RES 3, D
-          res8(3, @d)
-        when 0x9b # RES 3, E
-          res8(3, @e)
-        when 0x9c # RES 3, H
-          res8(3, @h)
-        when 0x9d # RES 3, L
-          res8(3, @l)
-        when 0x9e # RES 3, (HL)
+        when 0x97 then res8(2, @a)
+        when 0x98 then res8(3, @b)
+        when 0x99 then res8(3, @c)
+        when 0x9a then res8(3, @d)
+        when 0x9b then res8(3, @e)
+        when 0x9c then res8(3, @h)
+        when 0x9d then res8(3, @l)
+        when 0x9e then # 3, (HL)
           reg = Register.new(name: 'HL', value: read_byte(hl))
           res8(3, reg)
           write_byte(hl, reg.value)
-        when 0x9f # RES 3, A
-          res8(3, @a)
-        when 0xa0 # RES 4, B
-          res8(4, @b)
-        when 0xa1 # RES 4, C
-          res8(4, @c)
-        when 0xa2 # RES 4, D
-          res8(4, @d)
-        when 0xa3 # RES 4, E
-          res8(4, @e)
-        when 0xa4 # RES 4, H
-          res8(4, @h)
-        when 0xa5 # RES 4, L
-          res8(4, @l)
-        when 0xa6 # RES 4, (HL)
+        when 0x9f then res8(3, @a)
+        when 0xa0 then res8(4, @b)
+        when 0xa1 then res8(4, @c)
+        when 0xa2 then res8(4, @d)
+        when 0xa3 then res8(4, @e)
+        when 0xa4 then res8(4, @h)
+        when 0xa5 then res8(4, @l)
+        when 0xa6 then # 4, (HL)
           reg = Register.new(name: 'HL', value: read_byte(hl))
           res8(4, reg)
           write_byte(hl, reg.value)
-        when 0xa7 # RES 4, A
-          res8(4, @a)
-        when 0xa8 # RES 5, B
-          res8(5, @b)
-        when 0xa9 # RES 5, C
-          res8(5, @c)
-        when 0xaa # RES 5, D
-          res8(5, @d)
-        when 0xab # RES 5, E
-          res8(5, @e)
-        when 0xac # RES 5, H
-          res8(5, @h)
-        when 0xad # RES 5, L
-          res8(5, @l)
-        when 0xae # RES 5, (HL)
+        when 0xa7 then res8(4, @a)
+        when 0xa8 then res8(5, @b)
+        when 0xa9 then res8(5, @c)
+        when 0xaa then res8(5, @d)
+        when 0xab then res8(5, @e)
+        when 0xac then res8(5, @h)
+        when 0xad then res8(5, @l)
+        when 0xae then # 5, (HL)
           reg = Register.new(name: 'HL', value: read_byte(hl))
           res8(5, reg)
           write_byte(hl, reg.value)
-        when 0xaf # RES 5, A
-          res8(5, @a)
-        when 0xb0 # RES 6, B
-          res8(6, @b)
-        when 0xb1 # RES 6, C
-          res8(6, @c)
-        when 0xb2 # RES 6, D
-          res8(6, @d)
-        when 0xb3 # RES 6, E
-          res8(6, @e)
-        when 0xb4 # RES 6, H
-          res8(6, @h)
-        when 0xb5 # RES 6, L
-          res8(6, @l)
-        when 0xb6 # RES 6, (HL)
+        when 0xaf then res8(5, @a)
+        when 0xb0 then res8(6, @b)
+        when 0xb1 then res8(6, @c)
+        when 0xb2 then res8(6, @d)
+        when 0xb3 then res8(6, @e)
+        when 0xb4 then res8(6, @h)
+        when 0xb5 then res8(6, @l)
+        when 0xb6 then # 6, (HL)
           reg = Register.new(name: 'HL', value: read_byte(hl))
           res8(6, reg)
           write_byte(hl, reg.value)
-        when 0xb7 # RES 6, A
-          res8(6, @a)
-        when 0xb8 # RES 7, B
-          res8(7, @b)
-        when 0xb9 # RES 7, C
-          res8(7, @c)
-        when 0xba # RES 7, D
-          res8(7, @d)
-        when 0xbb # RES 7, E
-          res8(7, @e)
-        when 0xbc # RES 7, H
-          res8(7, @h)
-        when 0xbd # RES 7, L
-          res8(7, @l)
-        when 0xbe # RES 7, (HL)
+        when 0xb7 then res8(6, @a)
+        when 0xb8 then res8(7, @b)
+        when 0xb9 then res8(7, @c)
+        when 0xba then res8(7, @d)
+        when 0xbb then res8(7, @e)
+        when 0xbc then res8(7, @h)
+        when 0xbd then res8(7, @l)
+        when 0xbe then # 7, (HL)
           reg = Register.new(name: 'HL', value: read_byte(hl))
           res8(7, reg)
           write_byte(hl, reg.value)
-        when 0xbf # RES 7, A
-          res8(7, @a)
-        when 0xc0 # SET 0, B
-          set8(0, @b)
-        when 0xc1 # SET 0, C
-          set8(0, @c)
-        when 0xc2 # SET 0, D
-          set8(0, @d)
-        when 0xc3 # SET 0, E
-          set8(0, @e)
-        when 0xc4 # SET 0, H
-          set8(0, @h)
-        when 0xc5 # SET 0, L
-          set8(0, @l)
-        when 0xc6 # SET 0, (HL)
+        when 0xbf then res8(7, @a)
+        when 0xc0 then set8(0, @b)
+        when 0xc1 then set8(0, @c)
+        when 0xc2 then set8(0, @d)
+        when 0xc3 then set8(0, @e)
+        when 0xc4 then set8(0, @h)
+        when 0xc5 then set8(0, @l)
+        when 0xc6 then # 0, (HL)
           reg = Register.new(name: 'HL', value: read_byte(hl))
           set8(0, reg)
           write_byte(hl, reg.value)
-        when 0xc7 # SET 0, A
-          set8(0, @a)
-        when 0xc8 # SET 1, B
-          set8(1, @b)
-        when 0xc9 # SET 1, C
-          set8(1, @c)
-        when 0xca # SET 1, D
-          set8(1, @d)
-        when 0xcb # SET 1, E
-          set8(1, @e)
-        when 0xcc # SET 1, H
-          set8(1, @h)
-        when 0xcd # SET 1, L
-          set8(1, @l)
-        when 0xce # SET 1, (HL)
+        when 0xc7 then set8(0, @a)
+        when 0xc8 then set8(1, @b)
+        when 0xc9 then set8(1, @c)
+        when 0xca then set8(1, @d)
+        when 0xcb then set8(1, @e)
+        when 0xcc then set8(1, @h)
+        when 0xcd then set8(1, @l)
+        when 0xce then # 1, (HL)
           reg = Register.new(name: 'HL', value: read_byte(hl))
           set8(1, reg)
           write_byte(hl, reg.value)
-        when 0xcf # SET 1, A
-          set8(1, @a)
-        when 0xd0 # SET 2, B
-          set8(2, @b)
-        when 0xd1 # SET 2, C
-          set8(2, @c)
-        when 0xd2 # SET 2, D
-          set8(2, @d)
-        when 0xd3 # SET 2, E
-          set8(2, @e)
-        when 0xd4 # SET 2, H
-          set8(2, @h)
-        when 0xd5 # SET 2, L
-          set8(2, @l)
-        when 0xd6 # SET 2, (HL)
+        when 0xcf then set8(1, @a)
+        when 0xd0 then set8(2, @b)
+        when 0xd1 then set8(2, @c)
+        when 0xd2 then set8(2, @d)
+        when 0xd3 then set8(2, @e)
+        when 0xd4 then set8(2, @h)
+        when 0xd5 then set8(2, @l)
+        when 0xd6 then # 2, (HL)
           reg = Register.new(name: 'HL', value: read_byte(hl))
           set8(2, reg)
           write_byte(hl, reg.value)
-        when 0xd7 # SET 2, A
-          set8(2, @a)
-        when 0xd8 # SET 3, B
-          set8(3, @b)
-        when 0xd9 # SET 3, C
-          set8(3, @c)
-        when 0xda # SET 3, D
-          set8(3, @d)
-        when 0xdb # SET 3, E
-          set8(3, @e)
-        when 0xdc # SET 3, H
-          set8(3, @h)
-        when 0xdd # SET 3, L
-          set8(3, @l)
-        when 0xde # SET 3, (HL)
+        when 0xd7 then set8(2, @a)
+        when 0xd8 then set8(3, @b)
+        when 0xd9 then set8(3, @c)
+        when 0xda then set8(3, @d)
+        when 0xdb then set8(3, @e)
+        when 0xdc then set8(3, @h)
+        when 0xdd then set8(3, @l)
+        when 0xde then # 3, (HL)
           reg = Register.new(name: 'HL', value: read_byte(hl))
           set8(3, reg)
           write_byte(hl, reg.value)
-        when 0xdf # SET 3, A
-          set8(3, @a)
-        when 0xe0 # SET 4, B
-          set8(4, @b)
-        when 0xe1 # SET 4, C
-          set8(4, @c)
-        when 0xe2 # SET 4, D
-          set8(4, @d)
-        when 0xe3 # SET 4, E
-          set8(4, @e)
-        when 0xe4 # SET 4, H
-          set8(4, @h)
-        when 0xe5 # SET 4, L
-          set8(4, @l)
-        when 0xe6 # SET 4, (HL)
+        when 0xdf then set8(3, @a)
+        when 0xe0 then set8(4, @b)
+        when 0xe1 then set8(4, @c)
+        when 0xe2 then set8(4, @d)
+        when 0xe3 then set8(4, @e)
+        when 0xe4 then set8(4, @h)
+        when 0xe5 then set8(4, @l)
+        when 0xe6 then # 4, (HL)
           reg = Register.new(name: 'HL', value: read_byte(hl))
           set8(4, reg)
           write_byte(hl, reg.value)
-        when 0xe7 # SET 4, A
-          set8(4, @a)
-        when 0xe8 # SET 5, B
-          set8(5, @b)
-        when 0xe9 # SET 5, C
-          set8(5, @c)
-        when 0xea # SET 5, D
-          set8(5, @d)
-        when 0xeb # SET 5, E
-          set8(5, @e)
-        when 0xec # SET 5, H
-          set8(5, @h)
-        when 0xed # SET 5, L
-          set8(5, @l)
-        when 0xee # SET 5, (HL)
+        when 0xe7 then set8(4, @a)
+        when 0xe8 then set8(5, @b)
+        when 0xe9 then set8(5, @c)
+        when 0xea then set8(5, @d)
+        when 0xeb then set8(5, @e)
+        when 0xec then set8(5, @h)
+        when 0xed then set8(5, @l)
+        when 0xee then # 5, (HL)
           reg = Register.new(name: 'HL', value: read_byte(hl))
           set8(5, reg)
           write_byte(hl, reg.value)
-        when 0xef # SET 5, A
-          set8(5, @a)
-        when 0xf0 # SET 6, B
-          set8(6, @b)
-        when 0xf1 # SET 6, C
-          set8(6, @c)
-        when 0xf2 # SET 6, D
-          set8(6, @d)
-        when 0xf3 # SET 6, E
-          set8(6, @e)
-        when 0xf4 # SET 6, H
-          set8(6, @h)
-        when 0xf5 # SET 6, L
-          set8(6, @l)
-        when 0xf6 # SET 6, (HL)
+        when 0xef then set8(5, @a)
+        when 0xf0 then set8(6, @b)
+        when 0xf1 then set8(6, @c)
+        when 0xf2 then set8(6, @d)
+        when 0xf3 then set8(6, @e)
+        when 0xf4 then set8(6, @h)
+        when 0xf5 then set8(6, @l)
+        when 0xf6 then # 6, (HL)
           reg = Register.new(name: 'HL', value: read_byte(hl))
           set8(6, reg)
           write_byte(hl, reg.value)
-        when 0xf7 # SET 6, A
-          set8(6, @a)
-        when 0xf8 # SET 7, B
-          set8(7, @b)
-        when 0xf9 # SET 7, C
-          set8(7, @c)
-        when 0xfa # SET 7, D
-          set8(7, @d)
-        when 0xfb # SET 7, E
-          set8(7, @e)
+        when 0xf7 then set8(6, @a)
+        when 0xf8 then set8(7, @b)
+        when 0xf9 then set8(7, @c)
+        when 0xfa then set8(7, @d)
+        when 0xfb then set8(7, @e)
         when 0xfc then set8(7, @h)
         when 0xfd then set8(7, @l)
-        when 0xfe # SET 7, (HL)
+        when 0xfe then # 7, (HL)
           reg = Register.new(name: 'HL', value: read_byte(hl))
           set8(7, reg)
           write_byte(hl, reg.value)
