@@ -8,6 +8,7 @@ require_relative 'rubyboy/rom'
 require_relative 'rubyboy/timer'
 require_relative 'rubyboy/lcd'
 require_relative 'rubyboy/joypad'
+require_relative 'rubyboy/interrupt'
 
 module Rubyboy
   class Console
