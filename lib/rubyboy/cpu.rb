@@ -2,6 +2,7 @@
 
 require 'json'
 require_relative 'register'
+require_relative 'registers'
 
 module Rubyboy
   class Cpu
@@ -14,6 +15,8 @@ module Rubyboy
       @h = Register.new(name: 'h', value: 0x01)
       @l = Register.new(name: 'l', value: 0x4d)
       @f = Register.new(name: 'f', value: 0xb0)
+
+      @registers = Registers.new
 
       @pc = 0x0100
       @sp = 0xfffe
