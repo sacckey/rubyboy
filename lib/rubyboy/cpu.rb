@@ -1520,5 +1520,27 @@ module Rubyboy
     def res8(n, x)
       x.value &= ((~(1 << n)) & 0xff)
     end
+
+    def get_value(operand)
+      case operand.type
+      when :register8 then @registers.read8(operand.value)
+      when :register16 then @registers.read16(operand.value)
+      when :indirect
+        addr = @registers.read16(operand.value)
+        read_byte(addr)
+      else raise "unknown operand: #{operand}"
+      end
+    end
+
+    def set_value(operand, value)
+      case operand.type
+      when :register8 then @registers.write8(operand.value, value)
+      when :register16 then @registers.write16(operand.value, value)
+      when :indirect
+        addr = @registers.read16(operand.value)
+        write_byte(addr, value)
+      else raise "unknown operand: #{operand}"
+      end
+    end
   end
 end
