@@ -29,6 +29,7 @@ module Rubyboy
     end
 
     def write8(register, value)
+      value &= 0xff
       case register
       when :a then @a = value
       when :b then @b = value
@@ -51,6 +52,7 @@ module Rubyboy
     end
 
     def write16(register, value)
+      value &= 0xffff
       case register
       when :af
         @a = (value >> 8) & 0xff
