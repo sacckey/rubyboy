@@ -16,7 +16,7 @@ module Rubyboy
 
     def initialize(rom_path)
       load_raylib
-      rom_data = File.open(File.expand_path(rom_path, __dir__), 'r') { _1.read.bytes }
+      rom_data = File.open(rom_path, 'r') { _1.read.bytes }
       rom = Rom.new(rom_data)
       interrupt = Interrupt.new
       @ppu = Ppu.new(interrupt)
