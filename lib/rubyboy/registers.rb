@@ -68,5 +68,13 @@ module Rubyboy
         @l = value & 0xff
       end
     end
+
+    def increment16(register)
+      write16(register, read16(register) + 1)
+    end
+
+    def decrement16(register)
+      write16(register, read16(register) - 1)
+    end
   end
 end
