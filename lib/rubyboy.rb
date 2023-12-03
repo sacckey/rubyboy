@@ -1,8 +1,6 @@
 # frozen_string_literal: true
 
 require 'raylib'
-require 'benchmark'
-require_relative 'rubyboy/version'
 require_relative 'rubyboy/bus'
 require_relative 'rubyboy/cpu'
 require_relative 'rubyboy/ppu'
@@ -10,20 +8,22 @@ require_relative 'rubyboy/rom'
 require_relative 'rubyboy/timer'
 require_relative 'rubyboy/lcd'
 require_relative 'rubyboy/joypad'
+require_relative 'rubyboy/interrupt'
 
 module Rubyboy
   class Console
     include Raylib
 
-    def initialize(rom_data)
+    def initialize(rom_path)
       load_raylib
+      rom_data = File.open(rom_path, 'r') { _1.read.bytes }
       rom = Rom.new(rom_data)
       interrupt = Interrupt.new
       @ppu = Ppu.new(interrupt)
       @timer = Timer.new(interrupt)
       @joypad = Joypad.new(interrupt)
       @bus = Bus.new(@ppu, rom, @timer, interrupt, @joypad)
-      @cpu = Cpu.new(@bus)
+      @cpu = Cpu.new(@bus, interrupt)
       @lcd = Lcd.new
     end
 
@@ -80,6 +80,3 @@ module Rubyboy
     end
   end
 end
-
-rom_data = File.open(File.expand_path('roms/bgbtest.gb', __dir__), 'r') { _1.read.bytes }
-Rubyboy::Console.new(rom_data).start

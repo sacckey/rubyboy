@@ -11,6 +11,33 @@ module Rubyboy
       drawing: 3
     }.freeze
 
+    LCDC = {
+      bg_window_enable: 0,
+      sprite_enable: 1,
+      sprite_size: 2,
+      bg_tile_map_area: 3,
+      bg_window_tile_data_area: 4,
+      window_enable: 5,
+      window_tile_map_area: 6,
+      lcd_ppu_enable: 7
+    }.freeze
+
+    STAT = {
+      ly_eq_lyc: 2,
+      hblank: 3,
+      vblank: 4,
+      oam_scan: 5,
+      lyc: 6
+    }.freeze
+
+    SPRITE_FLAGS = {
+      bank: 3,
+      dmg_palette: 4,
+      x_flip: 5,
+      y_flip: 6,
+      priority: 7
+    }.freeze
+
     LCD_WIDTH = 160
     LCD_HEIGHT = 144
 
@@ -90,8 +117,6 @@ module Rubyboy
         # ly is read only
       when 0xff45
         @lyc = value
-      when 0xff46
-        # dma
       when 0xff47
         @bgp = value
       when 0xff48
@@ -106,7 +131,7 @@ module Rubyboy
     end
 
     def step(cycles)
-      return false if @lcdc[7].zero?
+      return false if @lcdc[LCDC[:lcd_ppu_enable]].zero?
 
       res = false
       @cycles += cycles
@@ -124,7 +149,7 @@ module Rubyboy
           render_sprites
           @cycles -= DRAWING_CYCLES
           @mode = MODE[:hblank]
-          @interrupt.request(0b0000_0010) if @stat[3] == 1
+          @interrupt.request(:lcd) if @stat[STAT[:hblank]] == 1
         end
       when MODE[:hblank]
         if @cycles >= HBLANK_CYCLES
@@ -134,11 +159,11 @@ module Rubyboy
 
           if @ly == LCD_HEIGHT
             @mode = MODE[:vblank]
-            @interrupt.request(0b0000_0001)
-            @interrupt.request(0b0000_0010) if @stat[4] == 1
+            @interrupt.request(:vblank)
+            @interrupt.request(:lcd) if @stat[STAT[:vblank]] == 1
           else
             @mode = MODE[:oam_scan]
-            @interrupt.request(0b0000_0010) if @stat[5] == 1
+            @interrupt.request(:lcd) if @stat[STAT[:oam_scan]] == 1
           end
         end
       when MODE[:vblank]
@@ -152,7 +177,7 @@ module Rubyboy
             @wly = 0
             handle_ly_eq_lyc
             @mode = MODE[:oam_scan]
-            @interrupt.request(0b0000_0010) if @stat[5] == 1
+            @interrupt.request(:lcd) if @stat[STAT[:oam_scan]] == 1
             res = true
           end
         end
@@ -162,12 +187,12 @@ module Rubyboy
     end
 
     def render_bg
-      return if @lcdc[0].zero?
+      return if @lcdc[LCDC[:bg_window_enable]].zero?
 
       y = (@ly + @scy) % 256
       LCD_WIDTH.times do |i|
         x = (i + @scx) % 256
-        tile_index = get_tile_index(@lcdc[3], x, y)
+        tile_index = get_tile_index(@lcdc[LCDC[:bg_tile_map_area]], x, y)
         pixel = get_pixel(tile_index, x, y)
         @buffer[@ly * LCD_WIDTH + i] = get_color(@bgp, pixel)
         @bg_pixels[i] = pixel
@@ -175,7 +200,7 @@ module Rubyboy
     end
 
     def render_window
-      return if @lcdc[0].zero? || @lcdc[5].zero? || @ly < @wy
+      return if @lcdc[LCDC[:bg_window_enable]].zero? || @lcdc[LCDC[:window_enable]].zero? || @ly < @wy
 
       rendered = false
       y = @wly
@@ -184,7 +209,7 @@ module Rubyboy
 
         rendered = true
         x = i - (@wx - 7)
-        tile_index = get_tile_index(@lcdc[6], x, y)
+        tile_index = get_tile_index(@lcdc[LCDC[:window_tile_map_area]], x, y)
         pixel = get_pixel(tile_index, x, y)
         @buffer[@ly * LCD_WIDTH + i] = get_color(@bgp, pixel)
         @bg_pixels[i] = pixel
@@ -193,11 +218,12 @@ module Rubyboy
     end
 
     def render_sprites
-      return if @lcdc[1].zero?
+      return if @lcdc[LCDC[:sprite_enable]].zero?
 
-      sprite_height = @lcdc[2].zero? ? 8 : 16
-
-      sprites = @oam.each_slice(4).filter_map do |sprite_attr|
+      sprite_height = @lcdc[LCDC[:sprite_size]].zero? ? 8 : 16
+      sprites = []
+      cnt = 0
+      @oam.each_slice(4).each do |sprite_attr|
         sprite = {
           y: (sprite_attr[0] - 16) % 256,
           x: (sprite_attr[1] - 8) % 256,
@@ -206,27 +232,30 @@ module Rubyboy
         }
         next if sprite[:y] > @ly || sprite[:y] + sprite_height <= @ly
 
-        sprite
+        sprites << sprite
+        cnt += 1
+        break if cnt == 10
       end
-      sprites = sprites.take(10).sort_by.with_index { |sprite, i| [-sprite[:x], -i] }
+      sprites = sprites.sort_by.with_index { |sprite, i| [-sprite[:x], -i] }
 
       sprites.each do |sprite|
-        pallet = sprite[:flags][4].zero? ? @obp0 : @obp1
+        flags = sprite[:flags]
+        pallet = flags[SPRITE_FLAGS[:dmg_palette]].zero? ? @obp0 : @obp1
         tile_index = sprite[:tile_index]
         tile_index &= 0xfe if sprite_height == 16
         y = (@ly - sprite[:y]) % 256
-        y = sprite_height - y - 1 if sprite[:flags][6] == 1
+        y = sprite_height - y - 1 if flags[SPRITE_FLAGS[:y_flip]] == 1
         tile_index = (tile_index + 1) % 256 if y >= 8
         y %= 8
 
         8.times do |x|
-          x_flipped = sprite[:flags][5] == 1 ? 7 - x : x
+          x_flipped = flags[SPRITE_FLAGS[:x_flip]] == 1 ? 7 - x : x
 
           pixel = get_pixel(tile_index, x_flipped, y)
           i = (sprite[:x] + x) % 256
 
           next if pixel.zero? || i >= LCD_WIDTH
-          next if sprite[:flags][7] == 1 && @bg_pixels[i] != 0
+          next if flags[SPRITE_FLAGS[:priority]] == 1 && @bg_pixels[i] != 0
 
           @buffer[@ly * LCD_WIDTH + i] = get_color(pallet, pixel)
         end
@@ -239,7 +268,7 @@ module Rubyboy
       tile_map_addr = tile_map_area.zero? ? 0x1800 : 0x1c00
       tile_map_index = (y / 8) * 32 + (x / 8)
       tile_index = @vram[tile_map_addr + tile_map_index]
-      @lcdc[4].zero? ? to_signed_byte(tile_index) + 256 : tile_index
+      @lcdc[LCDC[:bg_window_tile_data_area]].zero? ? to_signed_byte(tile_index) + 256 : tile_index
     end
 
     def get_pixel(tile_index, x, y)
@@ -263,7 +292,7 @@ module Rubyboy
     def handle_ly_eq_lyc
       if @ly == @lyc
         @stat |= 0x04
-        @interrupt.request(0b0000_0010) if @stat[6] == 1
+        @interrupt.request(:lcd) if @stat[STAT[:lyc]] == 1
       else
         @stat &= 0xfb
       end
