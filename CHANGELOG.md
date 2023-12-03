@@ -1,5 +1,12 @@
 ## [Unreleased]
 
+## [1.0.0] - 2023-12-04
+
+- Fix halt and timer
+- Add executable command
+- Refactoring
+- tobu.gb works at 30fps
+
 ## [0.4.0] - 2023-11-20
 
 - Fix interrupt
