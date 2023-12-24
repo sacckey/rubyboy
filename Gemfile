@@ -10,4 +10,6 @@ gem 'rake', '~> 13.0'
 group :development, :test do
   gem 'rspec', '~> 3.12'
   gem 'rubocop', '~> 1.57'
+
+  gem 'stackprof', '~> 0.2.25'
 end
