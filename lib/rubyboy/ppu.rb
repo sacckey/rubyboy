@@ -223,16 +223,13 @@ module Rubyboy
       sprite_height = @lcdc[LCDC[:sprite_size]].zero? ? 8 : 16
       sprites = []
       cnt = 0
-      @oam.each_slice(4).each do |sprite_attr|
-        sprite = {
-          y: (sprite_attr[0] - 16) % 256,
-          x: (sprite_attr[1] - 8) % 256,
-          tile_index: sprite_attr[2],
-          flags: sprite_attr[3]
-        }
-        next if sprite[:y] > @ly || sprite[:y] + sprite_height <= @ly
 
-        sprites << sprite
+      @oam.each_slice(4) do |y, x, tile_index, flags|
+        y = (y - 16) % 256
+        x = (x - 8) % 256
+        next if y > @ly || y + sprite_height <= @ly
+
+        sprites << { y:, x:, tile_index:, flags: }
         cnt += 1
         break if cnt == 10
       end
