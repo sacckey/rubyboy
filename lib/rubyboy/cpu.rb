@@ -21,14 +21,14 @@ module Rubyboy
       opcode = read_byte(@pc)
       # print_log(opcode)
 
-      @halted &= @interrupt.interrupts.zero?
+      @halted &= @interrupt.interrupts == 0
 
       return 16 if @halted
 
-      if @ime && @interrupt.interrupts.positive?
+      if @ime && @interrupt.interrupts > 0
         pcs = [0x0040, 0x0048, 0x0050, 0x0058, 0x0060]
         5.times do |i|
-          next if @interrupt.interrupts[i].zero?
+          next if @interrupt.interrupts[i] == 0
 
           @interrupt.reset_flag(i)
           @ime = false
@@ -706,7 +706,7 @@ module Rubyboy
 
       @registers.write8(:a, a_value)
       update_flags(
-        z: @registers.read8(:a).zero?,
+        z: @registers.read8(:a) == 0,
         h: false
       )
 
@@ -747,9 +747,9 @@ module Rubyboy
       value = (get_value(x) + 1) & 0xff
       set_value(x, value)
       update_flags(
-        z: value.zero?,
+        z: value == 0,
         n: false,
-        h: (value & 0x0f).zero?
+        h: (value & 0x0f) == 0
       )
 
       x.type == :register8 ? 4 : 12
@@ -765,7 +765,7 @@ module Rubyboy
       value = (get_value(x) - 1) & 0xff
       set_value(x, value)
       update_flags(
-        z: value.zero?,
+        z: value == 0,
         n: true,
         h: (value & 0x0f) == 0x0f
       )
@@ -789,7 +789,7 @@ module Rubyboy
       a_value += x_value
       @registers.write8(:a, a_value)
       update_flags(
-        z: @registers.read8(:a).zero?,
+        z: @registers.read8(:a) == 0,
         n: false,
         h: hflag,
         c: cflag
@@ -842,7 +842,7 @@ module Rubyboy
       a_value -= x_value
       @registers.write8(:a, a_value)
       update_flags(
-        z: a_value.zero?,
+        z: a_value == 0,
         n: true,
         h: hflag,
         c: cflag
@@ -861,7 +861,7 @@ module Rubyboy
       a_value += x_value + c_value
       @registers.write8(:a, a_value)
       update_flags(
-        z: @registers.read8(:a).zero?,
+        z: @registers.read8(:a) == 0,
         n: false,
         h: hflag,
         c: cflag
@@ -880,7 +880,7 @@ module Rubyboy
       a_value -= x_value + c_value
       @registers.write8(:a, a_value)
       update_flags(
-        z: @registers.read8(:a).zero?,
+        z: @registers.read8(:a) == 0,
         n: true,
         h: hflag,
         c: cflag
@@ -893,7 +893,7 @@ module Rubyboy
       a_value = @registers.read8(:a) & get_value(x)
       @registers.write8(:a, a_value)
       update_flags(
-        z: a_value.zero?,
+        z: a_value == 0,
         n: false,
         h: true,
         c: false
@@ -906,7 +906,7 @@ module Rubyboy
       a_value = @registers.read8(:a) | get_value(x)
       @registers.write8(:a, a_value)
       update_flags(
-        z: a_value.zero?,
+        z: a_value == 0,
         n: false,
         h: false,
         c: false
@@ -919,7 +919,7 @@ module Rubyboy
       a_value = @registers.read8(:a) ^ get_value(x)
       @registers.write8(:a, a_value)
       update_flags(
-        z: a_value.zero?,
+        z: a_value == 0,
         n: false,
         h: false,
         c: false
@@ -1074,7 +1074,7 @@ module Rubyboy
       value = (value << 1) | (value >> 7)
       set_value(x, value)
       update_flags(
-        z: value.zero?,
+        z: value == 0,
         n: false,
         h: false,
         c: value[0] == 1
@@ -1088,7 +1088,7 @@ module Rubyboy
       value = (value >> 1) | (value << 7)
       set_value(x, value)
       update_flags(
-        z: value.zero?,
+        z: value == 0,
         n: false,
         h: false,
         c: value[7] == 1
@@ -1103,7 +1103,7 @@ module Rubyboy
       value = ((value << 1) | bool_to_integer(flags[:c])) & 0xff
       set_value(x, value)
       update_flags(
-        z: value.zero?,
+        z: value == 0,
         n: false,
         h: false,
         c: cflag
@@ -1118,7 +1118,7 @@ module Rubyboy
       value = (value >> 1) | (bool_to_integer(flags[:c]) << 7)
       set_value(x, value)
       update_flags(
-        z: value.zero?,
+        z: value == 0,
         n: false,
         h: false,
         c: cflag
@@ -1134,7 +1134,7 @@ module Rubyboy
       value &= 0xff
       set_value(x, value)
       update_flags(
-        z: value.zero?,
+        z: value == 0,
         n: false,
         h: false,
         c: cflag
@@ -1149,7 +1149,7 @@ module Rubyboy
       value = (value >> 1) | (value[7] << 7)
       set_value(x, value)
       update_flags(
-        z: value.zero?,
+        z: value == 0,
         n: false,
         h: false,
         c: cflag
@@ -1163,7 +1163,7 @@ module Rubyboy
       value = ((value & 0x0f) << 4) | ((value & 0xf0) >> 4)
       set_value(x, value)
       update_flags(
-        z: value.zero?,
+        z: value == 0,
         n: false,
         h: false,
         c: false
@@ -1178,7 +1178,7 @@ module Rubyboy
       value >>= 1
       set_value(x, value)
       update_flags(
-        z: value.zero?,
+        z: value == 0,
         n: false,
         h: false,
         c: cflag
@@ -1190,7 +1190,7 @@ module Rubyboy
     def bit8(n, x)
       value = get_value(x)
       update_flags(
-        z: value[n].zero?,
+        z: value[n] == 0,
         n: false,
         h: true
       )

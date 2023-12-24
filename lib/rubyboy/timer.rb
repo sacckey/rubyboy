@@ -19,7 +19,7 @@ module Rubyboy
       @div += after_cycles / 256 - before_cycles / 256
       @div &= 0xffff
 
-      return if @tac[2].zero?
+      return if @tac[2] == 0
 
       divider = case @tac & 0b11
                 when 0b00 then 1024

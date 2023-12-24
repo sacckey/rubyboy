@@ -13,8 +13,8 @@ module Rubyboy
       raise "not implemented: write_byte #{addr}" unless addr == 0xff00
 
       res = @mode | 0xcf
-      res &= @direction if @mode[4].zero?
-      res &= @action if @mode[5].zero?
+      res &= @direction if @mode[4] == 0
+      res &= @action if @mode[5] == 0
 
       res
     end
