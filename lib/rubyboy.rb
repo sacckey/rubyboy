@@ -42,6 +42,21 @@ module Rubyboy
       raise e
     end
 
+    def bench
+      cnt = 0
+      start_time = Time.now
+      while cnt < 1500
+        cycles = @cpu.exec
+        @timer.step(cycles)
+        if @ppu.step(cycles)
+          key_input_check
+          cnt += 1
+        end
+      end
+
+      Time.now - start_time
+    end
+
     private
 
     def draw
