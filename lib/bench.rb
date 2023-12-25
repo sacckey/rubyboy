@@ -6,7 +6,7 @@ require_relative 'rubyboy'
 module Rubyboy
   class Bench
     def stackprof
-      StackProf.run(mode: :cpu, out: 'stackprof-cpu-myapp.dump') do
+      StackProf.run(mode: :cpu, out: 'stackprof-cpu-myapp.dump', raw: true) do
         Rubyboy::Console.new('lib/roms/tobu.gb').bench
       end
     end
