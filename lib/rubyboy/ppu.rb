@@ -191,10 +191,11 @@ module Rubyboy
 
       y = (@ly + @scy) % 256
       tile_map_addr = @lcdc[LCDC[:bg_tile_map_area]] == 0 ? 0x1800 : 0x1c00
+      tile_map_addr += (y / 8) * 32
       LCD_WIDTH.times do |i|
         x = (i + @scx) % 256
-        tile_index = get_tile_index(tile_map_addr, x, y)
-        pixel = get_pixel(tile_index, x, y)
+        tile_index = get_tile_index(tile_map_addr + (x / 8))
+        pixel = get_pixel(tile_index << 4, 7 - (x % 8), (y % 8) * 2)
         @buffer[@ly * LCD_WIDTH + i] = get_color(@bgp, pixel)
         @bg_pixels[i] = pixel
       end
@@ -206,13 +207,14 @@ module Rubyboy
       rendered = false
       y = @wly
       tile_map_addr = @lcdc[LCDC[:window_tile_map_area]] == 0 ? 0x1800 : 0x1c00
+      tile_map_addr += (y / 8) * 32
       LCD_WIDTH.times do |i|
         next if i < @wx - 7
 
         rendered = true
         x = i - (@wx - 7)
-        tile_index = get_tile_index(tile_map_addr, x, y)
-        pixel = get_pixel(tile_index, x, y)
+        tile_index = get_tile_index(tile_map_addr + (x / 8))
+        pixel = get_pixel(tile_index << 4, 7 - (x % 8), (y % 8) * 2)
         @buffer[@ly * LCD_WIDTH + i] = get_color(@bgp, pixel)
         @bg_pixels[i] = pixel
       end
@@ -250,7 +252,7 @@ module Rubyboy
         8.times do |x|
           x_flipped = flags[SPRITE_FLAGS[:x_flip]] == 1 ? 7 - x : x
 
-          pixel = get_pixel(tile_index, x_flipped, y)
+          pixel = get_pixel(tile_index << 4, 7 - x_flipped, (y % 8) * 2)
           i = (sprite[:x] + x) % 256
 
           next if pixel == 0 || i >= LCD_WIDTH
@@ -263,14 +265,13 @@ module Rubyboy
 
     private
 
-    def get_tile_index(tile_map_addr, x, y)
-      tile_map_index = (y / 8) * 32 + (x / 8)
-      tile_index = @vram[tile_map_addr + tile_map_index]
+    def get_tile_index(tile_map_addr)
+      tile_index = @vram[tile_map_addr]
       @lcdc[LCDC[:bg_window_tile_data_area]] == 0 ? to_signed_byte(tile_index) + 256 : tile_index
     end
 
-    def get_pixel(tile_index, x, y)
-      @vram[tile_index * 16 + (y % 8) * 2][7 - (x % 8)] + (@vram[tile_index * 16 + (y % 8) * 2 + 1][7 - (x % 8)] << 1)
+    def get_pixel(tile_index, c, r)
+      @vram[tile_index + r][c] + (@vram[tile_index + r + 1][c] << 1)
     end
 
     def get_color(pallet, pixel)
