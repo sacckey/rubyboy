@@ -2,6 +2,16 @@
 # frozen_string_literal: true
 
 require 'rubyboy'
+require 'bench'
 
-rom_path = ARGV[0]
-Rubyboy::Console.new(rom_path).start
+arg = ARGV[0]
+
+puts "yjit: #{RubyVM::YJIT.enabled?}"
+
+if arg == 'bench'
+  Rubyboy::Bench.new.bench
+elsif arg == 'stackprof'
+  Rubyboy::Bench.new.stackprof
+else
+  Rubyboy::Console.new(arg).start
+end

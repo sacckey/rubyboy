@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    rubyboy (1.0.0)
+    rubyboy (1.1.0)
       raylib-bindings (~> 0.5.7)
 
 GEM
@@ -54,6 +54,7 @@ GEM
     rubocop-ast (1.29.0)
       parser (>= 3.2.1.0)
     ruby-progressbar (1.13.0)
+    stackprof (0.2.25)
     unicode-display_width (2.5.0)
 
 PLATFORMS
@@ -65,6 +66,7 @@ DEPENDENCIES
   rspec (~> 3.12)
   rubocop (~> 1.57)
   rubyboy!
+  stackprof (~> 0.2.25)
 
 BUNDLED WITH
    2.4.20

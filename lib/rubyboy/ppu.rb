@@ -131,7 +131,7 @@ module Rubyboy
     end
 
     def step(cycles)
-      return false if @lcdc[LCDC[:lcd_ppu_enable]].zero?
+      return false if @lcdc[LCDC[:lcd_ppu_enable]] == 0
 
       res = false
       @cycles += cycles
@@ -187,30 +187,34 @@ module Rubyboy
     end
 
     def render_bg
-      return if @lcdc[LCDC[:bg_window_enable]].zero?
+      return if @lcdc[LCDC[:bg_window_enable]] == 0
 
       y = (@ly + @scy) % 256
+      tile_map_addr = @lcdc[LCDC[:bg_tile_map_area]] == 0 ? 0x1800 : 0x1c00
+      tile_map_addr += (y / 8) * 32
       LCD_WIDTH.times do |i|
         x = (i + @scx) % 256
-        tile_index = get_tile_index(@lcdc[LCDC[:bg_tile_map_area]], x, y)
-        pixel = get_pixel(tile_index, x, y)
+        tile_index = get_tile_index(tile_map_addr + (x / 8))
+        pixel = get_pixel(tile_index << 4, 7 - (x % 8), (y % 8) * 2)
         @buffer[@ly * LCD_WIDTH + i] = get_color(@bgp, pixel)
         @bg_pixels[i] = pixel
       end
     end
 
     def render_window
-      return if @lcdc[LCDC[:bg_window_enable]].zero? || @lcdc[LCDC[:window_enable]].zero? || @ly < @wy
+      return if @lcdc[LCDC[:bg_window_enable]] == 0 || @lcdc[LCDC[:window_enable]] == 0 || @ly < @wy
 
       rendered = false
       y = @wly
+      tile_map_addr = @lcdc[LCDC[:window_tile_map_area]] == 0 ? 0x1800 : 0x1c00
+      tile_map_addr += (y / 8) * 32
       LCD_WIDTH.times do |i|
         next if i < @wx - 7
 
         rendered = true
         x = i - (@wx - 7)
-        tile_index = get_tile_index(@lcdc[LCDC[:window_tile_map_area]], x, y)
-        pixel = get_pixel(tile_index, x, y)
+        tile_index = get_tile_index(tile_map_addr + (x / 8))
+        pixel = get_pixel(tile_index << 4, 7 - (x % 8), (y % 8) * 2)
         @buffer[@ly * LCD_WIDTH + i] = get_color(@bgp, pixel)
         @bg_pixels[i] = pixel
       end
@@ -218,21 +222,18 @@ module Rubyboy
     end
 
     def render_sprites
-      return if @lcdc[LCDC[:sprite_enable]].zero?
+      return if @lcdc[LCDC[:sprite_enable]] == 0
 
-      sprite_height = @lcdc[LCDC[:sprite_size]].zero? ? 8 : 16
+      sprite_height = @lcdc[LCDC[:sprite_size]] == 0 ? 8 : 16
       sprites = []
       cnt = 0
-      @oam.each_slice(4).each do |sprite_attr|
-        sprite = {
-          y: (sprite_attr[0] - 16) % 256,
-          x: (sprite_attr[1] - 8) % 256,
-          tile_index: sprite_attr[2],
-          flags: sprite_attr[3]
-        }
-        next if sprite[:y] > @ly || sprite[:y] + sprite_height <= @ly
 
-        sprites << sprite
+      @oam.each_slice(4) do |y, x, tile_index, flags|
+        y = (y - 16) % 256
+        x = (x - 8) % 256
+        next if y > @ly || y + sprite_height <= @ly
+
+        sprites << { y:, x:, tile_index:, flags: }
         cnt += 1
         break if cnt == 10
       end
@@ -240,7 +241,7 @@ module Rubyboy
 
       sprites.each do |sprite|
         flags = sprite[:flags]
-        pallet = flags[SPRITE_FLAGS[:dmg_palette]].zero? ? @obp0 : @obp1
+        pallet = flags[SPRITE_FLAGS[:dmg_palette]] == 0 ? @obp0 : @obp1
         tile_index = sprite[:tile_index]
         tile_index &= 0xfe if sprite_height == 16
         y = (@ly - sprite[:y]) % 256
@@ -251,10 +252,10 @@ module Rubyboy
         8.times do |x|
           x_flipped = flags[SPRITE_FLAGS[:x_flip]] == 1 ? 7 - x : x
 
-          pixel = get_pixel(tile_index, x_flipped, y)
+          pixel = get_pixel(tile_index << 4, 7 - x_flipped, (y % 8) * 2)
           i = (sprite[:x] + x) % 256
 
-          next if pixel.zero? || i >= LCD_WIDTH
+          next if pixel == 0 || i >= LCD_WIDTH
           next if flags[SPRITE_FLAGS[:priority]] == 1 && @bg_pixels[i] != 0
 
           @buffer[@ly * LCD_WIDTH + i] = get_color(pallet, pixel)
@@ -264,15 +265,13 @@ module Rubyboy
 
     private
 
-    def get_tile_index(tile_map_area, x, y)
-      tile_map_addr = tile_map_area.zero? ? 0x1800 : 0x1c00
-      tile_map_index = (y / 8) * 32 + (x / 8)
-      tile_index = @vram[tile_map_addr + tile_map_index]
-      @lcdc[LCDC[:bg_window_tile_data_area]].zero? ? to_signed_byte(tile_index) + 256 : tile_index
+    def get_tile_index(tile_map_addr)
+      tile_index = @vram[tile_map_addr]
+      @lcdc[LCDC[:bg_window_tile_data_area]] == 0 ? to_signed_byte(tile_index) + 256 : tile_index
     end
 
-    def get_pixel(tile_index, x, y)
-      @vram[tile_index * 16 + (y % 8) * 2][7 - (x % 8)] + (@vram[tile_index * 16 + (y % 8) * 2 + 1][7 - (x % 8)] << 1)
+    def get_pixel(tile_index, c, r)
+      @vram[tile_index + r][c] + (@vram[tile_index + r + 1][c] << 1)
     end
 
     def get_color(pallet, pixel)

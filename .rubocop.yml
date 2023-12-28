@@ -40,3 +40,6 @@ Style/FormatString:
 
 Style/NumericLiterals:
   Enabled: false
+
+Style/NumericPredicate:
+  EnforcedStyle: comparison
