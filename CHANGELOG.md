@@ -1,5 +1,10 @@
 ## [Unreleased]
 
+## [1.1.0] - 2023-12-28
+
+- Add bench option
+- Improve speed by refactoring
+
 ## [1.0.0] - 2023-12-04
 
 - Fix halt and timer
