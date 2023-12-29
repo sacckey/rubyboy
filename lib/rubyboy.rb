@@ -83,7 +83,8 @@ module Rubyboy
       when /mswin|msys|mingw/ # Windows
         Raylib.load_lib("#{shared_lib_path}libraylib.dll")
       when /darwin/ # macOS
-        Raylib.load_lib("#{shared_lib_path}libraylib.dylib")
+        arch = RUBY_PLATFORM.split('-')[0]
+        Raylib.load_lib(shared_lib_path + "libraylib.#{arch}.dylib")
       when /linux/ # Ubuntu Linux (x86_64 or aarch64)
         arch = RUBY_PLATFORM.split('-')[0]
         Raylib.load_lib(shared_lib_path + "libraylib.#{arch}.so")
