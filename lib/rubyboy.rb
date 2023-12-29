@@ -65,9 +65,9 @@ module Rubyboy
     end
 
     def buffer_to_pixel_data(buffer)
-      buffer.map do |row|
+      buffer.flat_map do |row|
         [row, row, row]
-      end.flatten.pack('C*')
+      end.pack('C*')
     end
 
     def key_input_check
