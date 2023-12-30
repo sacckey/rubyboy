@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require_relative '../ram'
-
 module Rubyboy
   module Cartridge
     class Mbc1

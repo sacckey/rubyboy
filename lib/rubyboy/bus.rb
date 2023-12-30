@@ -1,14 +1,12 @@
 # frozen_string_literal: true
 
-require_relative 'cartridge/factory'
-
 module Rubyboy
   class Bus
-    def initialize(ppu, rom, timer, interrupt, joypad)
+    def initialize(ppu, rom, ram, mbc, timer, interrupt, joypad)
       @ppu = ppu
       @rom = rom
-      @ram = Ram.new
-      @mbc = Cartridge::Factory.create(@rom, @ram)
+      @ram = ram
+      @mbc = mbc
       @joypad = joypad
       @interrupt = interrupt
       @timer = timer

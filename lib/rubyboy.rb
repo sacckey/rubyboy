@@ -5,10 +5,12 @@ require_relative 'rubyboy/bus'
 require_relative 'rubyboy/cpu'
 require_relative 'rubyboy/ppu'
 require_relative 'rubyboy/rom'
+require_relative 'rubyboy/ram'
 require_relative 'rubyboy/timer'
 require_relative 'rubyboy/lcd'
 require_relative 'rubyboy/joypad'
 require_relative 'rubyboy/interrupt'
+require_relative 'rubyboy/cartridge/factory'
 
 module Rubyboy
   class Console
@@ -18,11 +20,13 @@ module Rubyboy
       load_raylib
       rom_data = File.open(rom_path, 'r') { _1.read.bytes }
       rom = Rom.new(rom_data)
+      ram = Ram.new
+      mbc = Cartridge::Factory.create(rom, ram)
       interrupt = Interrupt.new
       @ppu = Ppu.new(interrupt)
       @timer = Timer.new(interrupt)
       @joypad = Joypad.new(interrupt)
-      @bus = Bus.new(@ppu, rom, @timer, interrupt, @joypad)
+      @bus = Bus.new(@ppu, rom, ram, mbc, @timer, interrupt, @joypad)
       @cpu = Cpu.new(@bus, interrupt)
       @lcd = Lcd.new
     end
