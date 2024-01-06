@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require_relative 'registers'
-require_relative 'operand'
 
 module Rubyboy
   class Cpu
