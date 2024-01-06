@@ -1,6 +1,8 @@
+<br>
 <p align="center">
   <img src="/resource/logo/logo.svg" width="480px">
 </p>
+<br>
 
 A Game Boy emulator written in Ruby
 
