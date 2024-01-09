@@ -1,5 +1,12 @@
 ## [Unreleased]
 
+## [1.2.0] - 2024-01-09
+
+- Add logo
+- Bump raylib-bindings version to 0.6.0
+- Optimizing
+- Remove unnecessary classes
+
 ## [1.1.0] - 2023-12-28
 
 - Add bench option
