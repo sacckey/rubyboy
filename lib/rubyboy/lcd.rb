@@ -15,6 +15,7 @@ module Rubyboy
       image = GenImageColor(WIDTH, HEIGHT, BLACK)
       image.format = PIXELFORMAT_UNCOMPRESSED_R8G8B8
       @texture = LoadTextureFromImage(image)
+      @vector = Vector2.create(0, 0)
     end
 
     def draw(pixel_data)
@@ -22,7 +23,7 @@ module Rubyboy
 
       BeginDrawing()
       ClearBackground(BLACK)
-      DrawTextureEx(@texture, Vector2.create(0, 0), 0.0, SCALE, WHITE)
+      DrawTextureEx(@texture, @vector, 0.0, SCALE, WHITE)
       EndDrawing()
     end
 

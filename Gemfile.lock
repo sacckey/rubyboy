@@ -1,8 +1,8 @@
 PATH
   remote: .
   specs:
-    rubyboy (1.1.0)
-      raylib-bindings (~> 0.5.7)
+    rubyboy (1.2.0)
+      raylib-bindings (~> 0.6.0)
 
 GEM
   remote: https://rubygems.org/
@@ -21,7 +21,10 @@ GEM
     racc (1.7.1)
     rainbow (3.1.1)
     rake (13.0.6)
-    raylib-bindings (0.5.7)
+    raylib-bindings (0.6.0-x86_64-darwin)
+      ffi (~> 1.16)
+      opengl-bindings2 (~> 2)
+    raylib-bindings (0.6.0-x86_64-linux)
       ffi (~> 1.16)
       opengl-bindings2 (~> 2)
     regexp_parser (2.8.2)
