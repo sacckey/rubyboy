@@ -33,6 +33,7 @@ Gem::Specification.new do |spec|
 
   # Uncomment to register a new dependency of your gem
   spec.add_dependency 'raylib-bindings', '~> 0.6.0'
+  spec.add_dependency 'sdl2-bindings', '~> 0.2.2'
 
   # For more information and examples about making a new gem, check out our
   # guide at: https://bundler.io/guides/creating_gem.html
