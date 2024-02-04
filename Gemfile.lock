@@ -2,6 +2,7 @@ PATH
   remote: .
   specs:
     rubyboy (1.2.0)
+      ffi (~> 1.16, >= 1.16.3)
       raylib-bindings (~> 0.6.0)
       sdl2-bindings (~> 0.2.2)
 

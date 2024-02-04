@@ -32,6 +32,7 @@ Gem::Specification.new do |spec|
   spec.require_paths = ['lib']
 
   # Uncomment to register a new dependency of your gem
+  spec.add_dependency 'ffi', '~> 1.16', '>= 1.16.3'
   spec.add_dependency 'raylib-bindings', '~> 0.6.0'
   spec.add_dependency 'sdl2-bindings', '~> 0.2.2'
 
