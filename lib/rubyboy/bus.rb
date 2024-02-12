@@ -2,12 +2,13 @@
 
 module Rubyboy
   class Bus
-    def initialize(ppu, rom, ram, mbc, timer, interrupt, joypad)
+    def initialize(ppu, rom, ram, mbc, timer, interrupt, joypad, apu)
       @ppu = ppu
       @rom = rom
       @ram = ram
       @mbc = mbc
       @joypad = joypad
+      @apu = apu
       @interrupt = interrupt
       @timer = timer
 
@@ -43,11 +44,9 @@ module Rubyboy
       when 0xff0f
         @interrupt.read_byte(addr)
       when 0xff10..0xff26
-        # sound
-        @tmp[addr] ||= 0
+        @apu.read_byte(addr)
       when 0xff30..0xff3f
-        # wave pattern ram
-        @tmp[addr] ||= 0
+        @apu.read_byte(addr)
       when 0xff40..0xff4b
         @ppu.read_byte(addr)
       when 0xff4f
@@ -102,11 +101,9 @@ module Rubyboy
       when 0xff0f
         @interrupt.write_byte(addr, value)
       when 0xff10..0xff26
-        # sound
-        @tmp[addr] = value
+        @apu.write_byte(addr, value)
       when 0xff30..0xff3f
-        # wave pattern ram
-        @tmp[addr] = value
+        @apu.write_byte(addr, value)
       when 0xff46
         0xa0.times do |i|
           write_byte(0xfe00 + i, read_byte((value << 8) + i))

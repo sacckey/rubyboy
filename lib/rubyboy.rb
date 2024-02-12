@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'rubyboy/sdl'
+require_relative 'rubyboy/apu'
 require_relative 'rubyboy/bus'
 require_relative 'rubyboy/cpu'
 require_relative 'rubyboy/ppu'
@@ -23,7 +24,8 @@ module Rubyboy
       @ppu = Ppu.new(interrupt)
       @timer = Timer.new(interrupt)
       @joypad = Joypad.new(interrupt)
-      @bus = Bus.new(@ppu, rom, ram, mbc, @timer, interrupt, @joypad)
+      @apu = Apu.new
+      @bus = Bus.new(@ppu, rom, ram, mbc, @timer, interrupt, @joypad, @apu)
       @cpu = Cpu.new(@bus, interrupt)
       @lcd = Lcd.new
     end
@@ -33,6 +35,7 @@ module Rubyboy
       while true
         cycles = @cpu.exec
         @timer.step(cycles)
+        @apu.step(cycles)
         if @ppu.step(cycles)
           draw
           key_input_check

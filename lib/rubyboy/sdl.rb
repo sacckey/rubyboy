@@ -6,11 +6,13 @@ module Rubyboy
     ffi_lib 'SDL2'
 
     INIT_TIMER = 0x01
+    INIT_AUDIO = 0x10
     INIT_VIDEO = 0x20
     INIT_KEYBOARD = 0x200
     WINDOW_RESIZABLE = 0x20
     PIXELFORMAT_RGB24 = 386930691
     SDL_WINDOW_RESIZABLE = 0x20
+    QUIT = 0x100
 
     SDL_SCANCODE_W = 26
     SDL_SCANCODE_A = 4
@@ -44,6 +46,24 @@ module Rubyboy
     attach_function :PollEvent, 'SDL_PollEvent', [:pointer], :int
     attach_function :Quit, 'SDL_Quit', [], :void
 
-    QUIT = 0x100
+    AUDIO_F32SYS = 0x8120
+    attach_function :OpenAudioDevice, 'SDL_OpenAudioDevice', [:string, :int, :pointer, :pointer, :int], :uint32
+    attach_function :PauseAudioDevice, 'SDL_PauseAudioDevice', [:uint32, :int], :void
+    attach_function :GetQueuedAudioSize, 'SDL_GetQueuedAudioSize', [:uint32], :uint32
+    attach_function :QueueAudio, 'SDL_QueueAudio', [:uint32, :pointer, :uint32], :int
+
+    class AudioSpec < FFI::Struct
+      layout(
+        :freq, :int,
+        :format, :ushort,
+        :channels, :uchar,
+        :silence, :uchar,
+        :samples, :ushort,
+        :padding, :ushort,
+        :size, :uint,
+        :callback, :pointer,
+        :userdata, :pointer,
+      )
+    end
   end
 end
