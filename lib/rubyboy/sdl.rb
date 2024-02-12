@@ -24,6 +24,7 @@ module Rubyboy
     attach_function :Init, 'SDL_Init', [:uint32], :int
     attach_function :InitSubSystem, 'SDL_InitSubSystem', [ :uint32 ], :int
     attach_function :CreateWindow, 'SDL_CreateWindow', [ :string, :int, :int, :int, :int, :uint32 ], :pointer
+    attach_function :DestroyWindow, 'SDL_DestroyWindow', [:pointer], :void
     attach_function :CreateRenderer, 'SDL_CreateRenderer', [:pointer, :int, :uint32], :pointer
     attach_function :CreateTexture, 'SDL_CreateTexture', [:pointer, :uint32, :int, :int, :int], :pointer
     attach_function :UpdateTexture, 'SDL_UpdateTexture', [:pointer, :pointer, :pointer, :int], :int
@@ -41,6 +42,7 @@ module Rubyboy
     attach_function :GetError, 'SDL_GetError', [], :string
     attach_function :SetRenderDrawColor, 'SDL_SetRenderDrawColor', [:pointer, :uint8, :uint8, :uint8, :uint8], :int
     attach_function :PollEvent, 'SDL_PollEvent', [:pointer], :int
+    attach_function :Quit, 'SDL_Quit', [], :void
 
     QUIT = 0x100
   end
