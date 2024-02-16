@@ -37,7 +37,7 @@ module Rubyboy
         @timer.step(cycles)
         @apu.step(cycles)
         if @ppu.step(cycles)
-          draw
+          @lcd.draw(@ppu.buffer)
           key_input_check
           break if @lcd.window_should_close?
         end
@@ -64,17 +64,6 @@ module Rubyboy
     end
 
     private
-
-    def draw
-      pixel_data = buffer_to_pixel_data(@ppu.buffer)
-      @lcd.draw(pixel_data)
-    end
-
-    def buffer_to_pixel_data(buffer)
-      buffer.flat_map do |row|
-        [row, row, row]
-      end
-    end
 
     def key_input_check
       SDL.PumpEvents
