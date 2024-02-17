@@ -13,6 +13,7 @@ GEM
     base64 (0.1.1)
     diff-lcs (1.5.0)
     ffi (1.16.3)
+    heap-profiler (0.7.0)
     json (2.6.3)
     language_server-protocol (3.17.0.3)
     opengl-bindings2 (2.0.1)
@@ -69,6 +70,7 @@ PLATFORMS
   x86_64-linux
 
 DEPENDENCIES
+  heap-profiler (~> 0.7.0)
   rake (~> 13.0)
   rspec (~> 3.12)
   rubocop (~> 1.57)
