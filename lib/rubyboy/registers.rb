@@ -2,7 +2,7 @@
 
 module Rubyboy
   class Registers
-    attr_reader :value
+    attr_reader :a, :b, :c, :d, :e, :h, :l, :f
 
     def initialize
       @a = 0x01
@@ -13,6 +13,74 @@ module Rubyboy
       @h = 0x01
       @l = 0x4d
       @f = 0xb0
+    end
+
+    def a=(value)
+      @a = value & 0xff
+    end
+
+    def b=(value)
+      @b = value & 0xff
+    end
+
+    def c=(value)
+      @c = value & 0xff
+    end
+
+    def d=(value)
+      @d = value & 0xff
+    end
+
+    def e=(value)
+      @e = value & 0xff
+    end
+
+    def h=(value)
+      @h = value & 0xff
+    end
+
+    def l=(value)
+      @l = value & 0xff
+    end
+
+    def f=(value)
+      @f = value & 0xf0
+    end
+
+    def af
+      (@a << 8) | @f
+    end
+
+    def bc
+      (@b << 8) | @c
+    end
+
+    def de
+      (@d << 8) | @e
+    end
+
+    def hl
+      (@h << 8) | @l
+    end
+
+    def af=(value)
+      @a = (value >> 8) & 0xff
+      @f = value & 0xf0
+    end
+
+    def bc=(value)
+      @b = (value >> 8) & 0xff
+      @c = value & 0xff
+    end
+
+    def de=(value)
+      @d = (value >> 8) & 0xff
+      @e = value & 0xff
+    end
+
+    def hl=(value)
+      @h = (value >> 8) & 0xff
+      @l = value & 0xff
     end
 
     def read8(register)
@@ -70,11 +138,11 @@ module Rubyboy
     end
 
     def increment16(register)
-      write16(register, read16(register) + 1)
+      send("#{register}=", send(register) + 1)
     end
 
     def decrement16(register)
-      write16(register, read16(register) - 1)
+      send("#{register}=", send(register) - 1)
     end
   end
 end
