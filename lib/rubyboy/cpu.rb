@@ -592,11 +592,11 @@ module Rubyboy
     end
 
     def print_log(opcode)
-      puts "PC: 0x#{'%04x' % @pc}, Opcode: 0x#{'%02x' % opcode}, AF: 0x#{'%04x' % @registers.read16(:af)}, BC: 0x#{'%04x' % @registers.read16(:bc)}, HL: 0x#{'%04x' % @registers.read16(:hl)}, SP: 0x#{'%04x' % @sp}"
+      puts "PC: 0x#{'%04x' % @pc}, Opcode: 0x#{'%02x' % opcode}, AF: 0x#{'%04x' % @registers.af}, BC: 0x#{'%04x' % @registers.bc}, HL: 0x#{'%04x' % @registers.hl}, SP: 0x#{'%04x' % @sp}"
     end
 
     def flags
-      f_value = @registers.read8(:f)
+      f_value = @registers.f
       {
         z: f_value[7] == 1,
         n: f_value[6] == 1,
@@ -612,7 +612,7 @@ module Rubyboy
       f_value |= 0x20 if h
       f_value |= 0x10 if c
 
-      @registers.write8(:f, f_value)
+      @registers.f = f_value
     end
 
     def bool_to_integer(bool)
@@ -633,9 +633,9 @@ module Rubyboy
     end
 
     def rlca(cycles:)
-      a_value = @registers.read8(:a)
+      a_value = @registers.a
       a_value = ((a_value << 1) | (a_value >> 7)) & 0xff
-      @registers.write8(:a, a_value)
+      @registers.a = a_value
       update_flags(
         z: false,
         n: false,
@@ -647,9 +647,9 @@ module Rubyboy
     end
 
     def rrca(cycles:)
-      a_value = @registers.read8(:a)
+      a_value = @registers.a
       a_value = ((a_value >> 1) | (a_value << 7)) & 0xff
-      @registers.write8(:a, a_value)
+      @registers.a = a_value
       update_flags(
         z: false,
         n: false,
@@ -661,10 +661,10 @@ module Rubyboy
     end
 
     def rra(cycles:)
-      a_value = @registers.read8(:a)
+      a_value = @registers.a
       cflag = a_value[0] == 1
       a_value = ((a_value >> 1) | (bool_to_integer(flags[:c]) << 7)) & 0xff
-      @registers.write8(:a, a_value)
+      @registers.a = a_value
       update_flags(
         z: false,
         n: false,
@@ -676,10 +676,10 @@ module Rubyboy
     end
 
     def rla(cycles:)
-      a_value = @registers.read8(:a)
+      a_value = @registers.a
       cflag = a_value[7] == 1
       a_value = ((a_value << 1) | bool_to_integer(flags[:c])) & 0xff
-      @registers.write8(:a, a_value)
+      @registers.a = a_value
       update_flags(
         z: false,
         n: false,
@@ -691,7 +691,7 @@ module Rubyboy
     end
 
     def daa(cycles:)
-      a_value = @registers.read8(:a)
+      a_value = @registers.a
       if flags[:n]
         a_value -= 0x06 if flags[:h]
         a_value -= 0x60 if flags[:c]
@@ -703,9 +703,9 @@ module Rubyboy
         a_value += 0x06 if flags[:h] || (a_value & 0x0f) > 0x09
       end
 
-      @registers.write8(:a, a_value)
+      @registers.a = a_value
       update_flags(
-        z: @registers.read8(:a) == 0,
+        z: @registers.a == 0,
         h: false
       )
 
@@ -713,7 +713,7 @@ module Rubyboy
     end
 
     def cpl(cycles:)
-      @registers.write8(:a, ~@registers.read8(:a))
+      @registers.a = ~@registers.a
       update_flags(
         n: true,
         h: true
@@ -779,16 +779,16 @@ module Rubyboy
     end
 
     def add8(x, cycles:)
-      a_value = @registers.read8(:a)
+      a_value = @registers.a
       x_value = get_value(x)
 
       hflag = (a_value & 0x0f) + (x_value & 0x0f) > 0x0f
       cflag = a_value + x_value > 0xff
 
       a_value += x_value
-      @registers.write8(:a, a_value)
+      @registers.a = a_value
       update_flags(
-        z: @registers.read8(:a) == 0,
+        z: @registers.a == 0,
         n: false,
         h: hflag,
         c: cflag
@@ -833,13 +833,13 @@ module Rubyboy
     end
 
     def sub8(x, cycles:)
-      a_value = @registers.read8(:a)
+      a_value = @registers.a
       x_value = get_value(x)
 
       hflag = (x_value & 0x0f) > (a_value & 0x0f)
       cflag = x_value > a_value
       a_value -= x_value
-      @registers.write8(:a, a_value)
+      @registers.a = a_value
       update_flags(
         z: a_value == 0,
         n: true,
@@ -851,16 +851,16 @@ module Rubyboy
     end
 
     def adc8(x, cycles:)
-      a_value = @registers.read8(:a)
+      a_value = @registers.a
       x_value = get_value(x)
       c_value = bool_to_integer(flags[:c])
 
       hflag = (a_value & 0x0f) + (x_value & 0x0f) + c_value > 0x0f
       cflag = a_value + x_value + c_value > 0xff
       a_value += x_value + c_value
-      @registers.write8(:a, a_value)
+      @registers.a = a_value
       update_flags(
-        z: @registers.read8(:a) == 0,
+        z: @registers.a == 0,
         n: false,
         h: hflag,
         c: cflag
@@ -870,16 +870,16 @@ module Rubyboy
     end
 
     def sbc8(x, cycles:)
-      a_value = @registers.read8(:a)
+      a_value = @registers.a
       x_value = get_value(x)
       c_value = bool_to_integer(flags[:c])
 
       hflag = (x_value & 0x0f) + c_value > (a_value & 0x0f)
       cflag = x_value + c_value > a_value
       a_value -= x_value + c_value
-      @registers.write8(:a, a_value)
+      @registers.a = a_value
       update_flags(
-        z: @registers.read8(:a) == 0,
+        z: @registers.a == 0,
         n: true,
         h: hflag,
         c: cflag
@@ -889,8 +889,8 @@ module Rubyboy
     end
 
     def and8(x, cycles:)
-      a_value = @registers.read8(:a) & get_value(x)
-      @registers.write8(:a, a_value)
+      a_value = @registers.a & get_value(x)
+      @registers.a = a_value
       update_flags(
         z: a_value == 0,
         n: false,
@@ -902,8 +902,8 @@ module Rubyboy
     end
 
     def or8(x, cycles:)
-      a_value = @registers.read8(:a) | get_value(x)
-      @registers.write8(:a, a_value)
+      a_value = @registers.a | get_value(x)
+      @registers.a = a_value
       update_flags(
         z: a_value == 0,
         n: false,
@@ -915,8 +915,8 @@ module Rubyboy
     end
 
     def xor8(x, cycles:)
-      a_value = @registers.read8(:a) ^ get_value(x)
-      @registers.write8(:a, a_value)
+      a_value = @registers.a ^ get_value(x)
+      @registers.a = a_value
       update_flags(
         z: a_value == 0,
         n: false,
@@ -992,7 +992,7 @@ module Rubyboy
     end
 
     def cp8(x, cycles:)
-      a_value = @registers.read8(:a)
+      a_value = @registers.a
       x_value = get_value(x)
 
       hflag = (x_value & 0x0f) > (a_value & 0x0f)
@@ -1216,13 +1216,13 @@ module Rubyboy
       when :direct16 then read_word(read_word_and_advance_pc)
       when :indirect then read_byte(@registers.read16(operand[:value]))
       when :ff00 then read_byte(0xff00 + read_byte_and_advance_pc)
-      when :ff00_c then read_byte(0xff00 + @registers.read8(:c))
+      when :ff00_c then read_byte(0xff00 + @registers.c)
       when :hl_inc
-        value = read_byte(@registers.read16(:hl))
+        value = read_byte(@registers.hl)
         @registers.increment16(:hl)
         value
       when :hl_dec
-        value = read_byte(@registers.read16(:hl))
+        value = read_byte(@registers.hl)
         @registers.decrement16(:hl)
         value
       else raise "unknown operand: #{operand}"
@@ -1238,12 +1238,12 @@ module Rubyboy
       when :direct16 then write_word(read_word_and_advance_pc, value)
       when :indirect then write_byte(@registers.read16(operand[:value]), value)
       when :ff00 then write_byte(0xff00 + read_byte_and_advance_pc, value)
-      when :ff00_c then write_byte(0xff00 + @registers.read8(:c), value)
+      when :ff00_c then write_byte(0xff00 + @registers.c, value)
       when :hl_inc
-        write_byte(@registers.read16(:hl), value)
+        write_byte(@registers.hl, value)
         @registers.increment16(:hl)
       when :hl_dec
-        write_byte(@registers.read16(:hl), value)
+        write_byte(@registers.hl, value)
         @registers.decrement16(:hl)
       when :immediate8, :immediate16 then raise 'immediate type is read only'
       else raise "unknown operand: #{operand}"
