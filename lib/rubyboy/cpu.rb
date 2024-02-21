@@ -73,7 +73,7 @@ module Rubyboy
       when 0x15 then dec8({ type: :register8, value: :d }, cycles: 4)
       when 0x16 then ld8({ type: :register8, value: :d }, { type: :immediate8 }, cycles: 8)
       when 0x17 then rla(cycles: 4)
-      when 0x18 then jr(cycles: 12)
+      when 0x18 then jr(condition: true)
       when 0x19 then add16({ type: :register16, value: :hl }, { type: :register16, value: :de }, cycles: 8)
       when 0x1a then ld8({ type: :register8, value: :a }, { type: :indirect, value: :de }, cycles: 8)
       when 0x1b then dec16({ type: :register16, value: :de }, cycles: 8)
@@ -81,7 +81,7 @@ module Rubyboy
       when 0x1d then dec8({ type: :register8, value: :e }, cycles: 4)
       when 0x1e then ld8({ type: :register8, value: :e }, { type: :immediate8 }, cycles: 8)
       when 0x1f then rra(cycles: 4)
-      when 0x20 then jr(condition: !flags[:z], cycles: 4)
+      when 0x20 then jr(condition: !flags[:z])
       when 0x21 then ld16({ type: :register16, value: :hl }, { type: :immediate16 }, cycles: 12)
       when 0x22 then ld8({ type: :hl_inc }, { type: :register8, value: :a }, cycles: 8)
       when 0x23 then inc16({ type: :register16, value: :hl }, cycles: 8)
@@ -89,7 +89,7 @@ module Rubyboy
       when 0x25 then dec8({ type: :register8, value: :h }, cycles: 4)
       when 0x26 then ld8({ type: :register8, value: :h }, { type: :immediate8 }, cycles: 8)
       when 0x27 then daa(cycles: 4)
-      when 0x28 then jr(condition: flags[:z], cycles: 4)
+      when 0x28 then jr(condition: flags[:z])
       when 0x29 then add16({ type: :register16, value: :hl }, { type: :register16, value: :hl }, cycles: 8)
       when 0x2a then ld8({ type: :register8, value: :a }, { type: :hl_inc }, cycles: 8)
       when 0x2b then dec16({ type: :register16, value: :hl }, cycles: 8)
@@ -97,7 +97,7 @@ module Rubyboy
       when 0x2d then dec8({ type: :register8, value: :l }, cycles: 4)
       when 0x2e then ld8({ type: :register8, value: :l }, { type: :immediate8 }, cycles: 8)
       when 0x2f then cpl(cycles: 4)
-      when 0x30 then jr(condition: !flags[:c], cycles: 4)
+      when 0x30 then jr(condition: !flags[:c])
       when 0x31 then ld16({ type: :sp }, { type: :immediate16 }, cycles: 12)
       when 0x32 then ld8({ type: :hl_dec }, { type: :register8, value: :a }, cycles: 8)
       when 0x33 then inc16({ type: :sp }, cycles: 8)
@@ -105,7 +105,7 @@ module Rubyboy
       when 0x35 then dec8({ type: :indirect, value: :hl }, cycles: 12)
       when 0x36 then ld8({ type: :indirect, value: :hl }, { type: :immediate8 }, cycles: 12)
       when 0x37 then scf(cycles: 4)
-      when 0x38 then jr(condition: flags[:c], cycles: 4)
+      when 0x38 then jr(condition: flags[:c])
       when 0x39 then add16({ type: :register16, value: :hl }, { type: :sp }, cycles: 8)
       when 0x3a then ld8({ type: :register8, value: :a }, { type: :hl_dec }, cycles: 8)
       when 0x3b then dec16({ type: :sp }, cycles: 8)
@@ -241,32 +241,32 @@ module Rubyboy
       when 0xbd then cp8({ type: :register8, value: :l }, cycles: 4)
       when 0xbe then cp8({ type: :indirect, value: :hl }, cycles: 8)
       when 0xbf then cp8({ type: :register8, value: :a }, cycles: 4)
-      when 0xc0 then ret_if(!flags[:z], cycles: 4)
+      when 0xc0 then ret_if(condition: !flags[:z])
       when 0xc1 then pop16(:bc, cycles: 12)
-      when 0xc2 then jp({ type: :immediate16 }, condition: !flags[:z], cycles: 4)
-      when 0xc3 then jp({ type: :immediate16 }, cycles: 4)
-      when 0xc4 then call16({ type: :immediate16 }, condition: !flags[:z], cycles: 4)
+      when 0xc2 then jp({ type: :immediate16 }, condition: !flags[:z])
+      when 0xc3 then jp({ type: :immediate16 }, condition: true)
+      when 0xc4 then call16({ type: :immediate16 }, condition: !flags[:z])
       when 0xc5 then push16(:bc, cycles: 16)
       when 0xc6 then add8({ type: :immediate8 }, cycles: 8)
       when 0xc7 then rst(0x00, cycles: 16)
-      when 0xc8 then ret_if(flags[:z], cycles: 4)
+      when 0xc8 then ret_if(condition: flags[:z])
       when 0xc9 then ret(cycles: 16)
-      when 0xca then jp({ type: :immediate16 }, condition: flags[:z], cycles: 4)
-      when 0xcc then call16({ type: :immediate16 }, condition: flags[:z], cycles: 4)
-      when 0xcd then call16({ type: :immediate16 }, cycles: 4)
+      when 0xca then jp({ type: :immediate16 }, condition: flags[:z])
+      when 0xcc then call16({ type: :immediate16 }, condition: flags[:z])
+      when 0xcd then call16({ type: :immediate16 }, condition: true)
       when 0xce then adc8({ type: :immediate8 }, cycles: 8)
       when 0xcf then rst(0x08, cycles: 16)
-      when 0xd0 then ret_if(!flags[:c], cycles: 4)
+      when 0xd0 then ret_if(condition: !flags[:c])
       when 0xd1 then pop16(:de, cycles: 12)
-      when 0xd2 then jp({ type: :immediate16 }, condition: !flags[:c], cycles: 4)
-      when 0xd4 then call16({ type: :immediate16 }, condition: !flags[:c], cycles: 4)
+      when 0xd2 then jp({ type: :immediate16 }, condition: !flags[:c])
+      when 0xd4 then call16({ type: :immediate16 }, condition: !flags[:c])
       when 0xd5 then push16(:de, cycles: 16)
       when 0xd6 then sub8({ type: :immediate8 }, cycles: 8)
       when 0xd7 then rst(0x10, cycles: 16)
-      when 0xd8 then ret_if(flags[:c], cycles: 4)
+      when 0xd8 then ret_if(condition: flags[:c])
       when 0xd9 then reti(cycles: 16)
-      when 0xda then jp({ type: :immediate16 }, condition: flags[:c], cycles: 4)
-      when 0xdc then call16({ type: :immediate16 }, condition: flags[:c], cycles: 4)
+      when 0xda then jp({ type: :immediate16 }, condition: flags[:c])
+      when 0xdc then call16({ type: :immediate16 }, condition: flags[:c])
       when 0xde then sbc8({ type: :immediate8 }, cycles: 8)
       when 0xdf then rst(0x18, cycles: 16)
       when 0xe0 then ld8({ type: :ff00 }, { type: :register8, value: :a }, cycles: 12)
@@ -276,7 +276,7 @@ module Rubyboy
       when 0xe6 then and8({ type: :immediate8 }, cycles: 8)
       when 0xe7 then rst(0x20, cycles: 16)
       when 0xe8 then add_sp_r8(cycles: 16)
-      when 0xe9 then jp({ type: :register16, value: :hl }, cycles: 4)
+      when 0xe9 then jp_hl(cycles: 4)
       when 0xea then ld8({ type: :direct8 }, { type: :register8, value: :a }, cycles: 16)
       when 0xee then xor8({ type: :immediate8 }, cycles: 8)
       when 0xef then rst(0x28, cycles: 16)
@@ -1015,23 +1015,27 @@ module Rubyboy
       cycles
     end
 
-    def jr(condition: true, cycles:)
+    def jr(condition:)
       value = to_signed_byte(read_byte_and_advance_pc)
       @pc += value if condition
 
       condition ? 12 : 8
     end
 
-    def jp(x, condition: true, cycles:)
+    def jp(x, condition:)
       addr = get_value(x)
       @pc = addr if condition
-
-      return 4 if x[:type] == :register16
 
       condition ? 16 : 12
     end
 
-    def call16(x, condition: true, cycles:)
+    def jp_hl(cycles:)
+      @pc = @registers.hl
+
+      cycles
+    end
+
+    def call16(x, condition:)
       addr = get_value(x)
       if condition
         @sp -= 2
@@ -1049,7 +1053,7 @@ module Rubyboy
       cycles
     end
 
-    def ret_if(condition, cycles:)
+    def ret_if(condition:)
       ret(cycles: 16) if condition
 
       condition ? 20 : 8
