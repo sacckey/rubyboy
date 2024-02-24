@@ -81,7 +81,7 @@ module Rubyboy
       when 0x1d then dec8(:e, cycles: 4)
       when 0x1e then ld8(:e, :immediate8, cycles: 8)
       when 0x1f then rra(cycles: 4)
-      when 0x20 then jr(condition: !flags[:z])
+      when 0x20 then jr(condition: !flag_z)
       when 0x21 then ld16(:hl, :immediate16, cycles: 12)
       when 0x22 then ld8(:hl_inc, :a, cycles: 8)
       when 0x23 then inc16(:hl, cycles: 8)
@@ -89,7 +89,7 @@ module Rubyboy
       when 0x25 then dec8(:h, cycles: 4)
       when 0x26 then ld8(:h, :immediate8, cycles: 8)
       when 0x27 then daa(cycles: 4)
-      when 0x28 then jr(condition: flags[:z])
+      when 0x28 then jr(condition: flag_z)
       when 0x29 then add16(:hl, :hl, cycles: 8)
       when 0x2a then ld8(:a, :hl_inc, cycles: 8)
       when 0x2b then dec16(:hl, cycles: 8)
@@ -97,7 +97,7 @@ module Rubyboy
       when 0x2d then dec8(:l, cycles: 4)
       when 0x2e then ld8(:l, :immediate8, cycles: 8)
       when 0x2f then cpl(cycles: 4)
-      when 0x30 then jr(condition: !flags[:c])
+      when 0x30 then jr(condition: !flag_c)
       when 0x31 then ld16(:sp, :immediate16, cycles: 12)
       when 0x32 then ld8(:hl_dec, :a, cycles: 8)
       when 0x33 then inc16(:sp, cycles: 8)
@@ -105,7 +105,7 @@ module Rubyboy
       when 0x35 then dec8(:indirect_hl, cycles: 12)
       when 0x36 then ld8(:indirect_hl, :immediate8, cycles: 12)
       when 0x37 then scf(cycles: 4)
-      when 0x38 then jr(condition: flags[:c])
+      when 0x38 then jr(condition: flag_c)
       when 0x39 then add16(:hl, :sp, cycles: 8)
       when 0x3a then ld8(:a, :hl_dec, cycles: 8)
       when 0x3b then dec16(:sp, cycles: 8)
@@ -241,32 +241,32 @@ module Rubyboy
       when 0xbd then cp8(:l, cycles: 4)
       when 0xbe then cp8(:indirect_hl, cycles: 8)
       when 0xbf then cp8(:a, cycles: 4)
-      when 0xc0 then ret_if(condition: !flags[:z])
+      when 0xc0 then ret_if(condition: !flag_z)
       when 0xc1 then pop16(:bc, cycles: 12)
-      when 0xc2 then jp(:immediate16, condition: !flags[:z])
+      when 0xc2 then jp(:immediate16, condition: !flag_z)
       when 0xc3 then jp(:immediate16, condition: true)
-      when 0xc4 then call16(:immediate16, condition: !flags[:z])
+      when 0xc4 then call16(:immediate16, condition: !flag_z)
       when 0xc5 then push16(:bc, cycles: 16)
       when 0xc6 then add8(:immediate8, cycles: 8)
       when 0xc7 then rst(0x00, cycles: 16)
-      when 0xc8 then ret_if(condition: flags[:z])
+      when 0xc8 then ret_if(condition: flag_z)
       when 0xc9 then ret(cycles: 16)
-      when 0xca then jp(:immediate16, condition: flags[:z])
-      when 0xcc then call16(:immediate16, condition: flags[:z])
+      when 0xca then jp(:immediate16, condition: flag_z)
+      when 0xcc then call16(:immediate16, condition: flag_z)
       when 0xcd then call16(:immediate16, condition: true)
       when 0xce then adc8(:immediate8, cycles: 8)
       when 0xcf then rst(0x08, cycles: 16)
-      when 0xd0 then ret_if(condition: !flags[:c])
+      when 0xd0 then ret_if(condition: !flag_c)
       when 0xd1 then pop16(:de, cycles: 12)
-      when 0xd2 then jp(:immediate16, condition: !flags[:c])
-      when 0xd4 then call16(:immediate16, condition: !flags[:c])
+      when 0xd2 then jp(:immediate16, condition: !flag_c)
+      when 0xd4 then call16(:immediate16, condition: !flag_c)
       when 0xd5 then push16(:de, cycles: 16)
       when 0xd6 then sub8(:immediate8, cycles: 8)
       when 0xd7 then rst(0x10, cycles: 16)
-      when 0xd8 then ret_if(condition: flags[:c])
+      when 0xd8 then ret_if(condition: flag_c)
       when 0xd9 then reti(cycles: 16)
-      when 0xda then jp(:immediate16, condition: flags[:c])
-      when 0xdc then call16(:immediate16, condition: flags[:c])
+      when 0xda then jp(:immediate16, condition: flag_c)
+      when 0xdc then call16(:immediate16, condition: flag_c)
       when 0xde then sbc8(:immediate8, cycles: 8)
       when 0xdf then rst(0x18, cycles: 16)
       when 0xe0 then ld8(:ff00, :a, cycles: 12)
@@ -595,17 +595,23 @@ module Rubyboy
       puts "PC: 0x#{'%04x' % @pc}, Opcode: 0x#{'%02x' % opcode}, AF: 0x#{'%04x' % @registers.af}, BC: 0x#{'%04x' % @registers.bc}, HL: 0x#{'%04x' % @registers.hl}, SP: 0x#{'%04x' % @sp}"
     end
 
-    def flags
-      f_value = @registers.f
-      {
-        z: f_value[7] == 1,
-        n: f_value[6] == 1,
-        h: f_value[5] == 1,
-        c: f_value[4] == 1
-      }
+    def flag_z
+      @registers.f[7] == 1
     end
 
-    def update_flags(z: flags[:z], n: flags[:n], h: flags[:h], c: flags[:c])
+    def flag_n
+      @registers.f[6] == 1
+    end
+
+    def flag_h
+      @registers.f[5] == 1
+    end
+
+    def flag_c
+      @registers.f[4] == 1
+    end
+
+    def update_flags(z: flag_z, n: flag_n, h: flag_h, c: flag_c)
       f_value = 0x00
       f_value |= 0x80 if z
       f_value |= 0x40 if n
@@ -663,7 +669,7 @@ module Rubyboy
     def rra(cycles:)
       a_value = @registers.a
       cflag = a_value[0] == 1
-      a_value = ((a_value >> 1) | (bool_to_integer(flags[:c]) << 7)) & 0xff
+      a_value = ((a_value >> 1) | (bool_to_integer(flag_c) << 7)) & 0xff
       @registers.a = a_value
       update_flags(
         z: false,
@@ -678,7 +684,7 @@ module Rubyboy
     def rla(cycles:)
       a_value = @registers.a
       cflag = a_value[7] == 1
-      a_value = ((a_value << 1) | bool_to_integer(flags[:c])) & 0xff
+      a_value = ((a_value << 1) | bool_to_integer(flag_c)) & 0xff
       @registers.a = a_value
       update_flags(
         z: false,
@@ -692,15 +698,15 @@ module Rubyboy
 
     def daa(cycles:)
       a_value = @registers.a
-      if flags[:n]
-        a_value -= 0x06 if flags[:h]
-        a_value -= 0x60 if flags[:c]
+      if flag_n
+        a_value -= 0x06 if flag_h
+        a_value -= 0x60 if flag_c
       else
-        if flags[:c] || a_value > 0x99
+        if flag_c || a_value > 0x99
           a_value += 0x60
           update_flags(c: true)
         end
-        a_value += 0x06 if flags[:h] || (a_value & 0x0f) > 0x09
+        a_value += 0x06 if flag_h || (a_value & 0x0f) > 0x09
       end
 
       @registers.a = a_value
@@ -736,7 +742,7 @@ module Rubyboy
       update_flags(
         n: false,
         h: false,
-        c: !flags[:c]
+        c: !flag_c
       )
 
       cycles
@@ -853,7 +859,7 @@ module Rubyboy
     def adc8(x, cycles:)
       a_value = @registers.a
       x_value = get_value(x)
-      c_value = bool_to_integer(flags[:c])
+      c_value = bool_to_integer(flag_c)
 
       hflag = (a_value & 0x0f) + (x_value & 0x0f) + c_value > 0x0f
       cflag = a_value + x_value + c_value > 0xff
@@ -872,7 +878,7 @@ module Rubyboy
     def sbc8(x, cycles:)
       a_value = @registers.a
       x_value = get_value(x)
-      c_value = bool_to_integer(flags[:c])
+      c_value = bool_to_integer(flag_c)
 
       hflag = (x_value & 0x0f) + c_value > (a_value & 0x0f)
       cflag = x_value + c_value > a_value
@@ -928,15 +934,14 @@ module Rubyboy
     end
 
     def push16(register16, cycles:)
-      value = @registers.send(register16)
       @sp -= 2
-      write_word(@sp, value)
+      write_word(@sp, get_value(register16))
 
       cycles
     end
 
     def pop16(register16, cycles:)
-      @registers.send("#{register16}=", read_word(@sp))
+      set_value(register16, read_word(@sp))
       @sp += 2
 
       cycles
@@ -1095,7 +1100,7 @@ module Rubyboy
     def rl8(x, cycles:)
       value = get_value(x)
       cflag = value[7] == 1
-      value = ((value << 1) | bool_to_integer(flags[:c])) & 0xff
+      value = ((value << 1) | bool_to_integer(flag_c)) & 0xff
       set_value(x, value)
       update_flags(
         z: value == 0,
@@ -1110,7 +1115,7 @@ module Rubyboy
     def rr8(x, cycles:)
       value = get_value(x)
       cflag = value[0] == 1
-      value = (value >> 1) | (bool_to_integer(flags[:c]) << 7)
+      value = (value >> 1) | (bool_to_integer(flag_c) << 7)
       set_value(x, value)
       update_flags(
         z: value == 0,
@@ -1211,7 +1216,18 @@ module Rubyboy
 
     def get_value(operand)
       case operand
-      when :a, :b, :c, :d, :e, :h, :l, :f, :af, :bc, :de, :hl then @registers.send(operand)
+      when :a then @registers.a
+      when :b then @registers.b
+      when :c then @registers.c
+      when :d then @registers.d
+      when :e then @registers.e
+      when :h then @registers.h
+      when :l then @registers.l
+      when :f then @registers.f
+      when :af then @registers.af
+      when :bc then @registers.bc
+      when :de then @registers.de
+      when :hl then @registers.hl
       when :sp then @sp
       when :immediate8 then read_byte_and_advance_pc
       when :immediate16 then read_word_and_advance_pc
@@ -1221,11 +1237,11 @@ module Rubyboy
       when :ff00_c then read_byte(0xff00 + @registers.c)
       when :hl_inc
         value = read_byte(@registers.hl)
-        @registers.increment16(:hl)
+        @registers.hl += 1
         value
       when :hl_dec
         value = read_byte(@registers.hl)
-        @registers.decrement16(:hl)
+        @registers.hl -= 1
         value
       when :indirect_hl then read_byte(@registers.hl)
       when :indirect_bc then read_byte(@registers.bc)
@@ -1236,7 +1252,18 @@ module Rubyboy
 
     def set_value(operand, value)
       case operand
-      when :a, :b, :c, :d, :e, :h, :l, :f, :af, :bc, :de, :hl then @registers.send("#{operand}=", value)
+      when :a then @registers.a = value
+      when :b then @registers.b = value
+      when :c then @registers.c = value
+      when :d then @registers.d = value
+      when :e then @registers.e = value
+      when :h then @registers.h = value
+      when :l then @registers.l = value
+      when :f then @registers.f = value
+      when :af then @registers.af = value
+      when :bc then @registers.bc = value
+      when :de then @registers.de = value
+      when :hl then @registers.hl = value
       when :sp then @sp = value & 0xffff
       when :direct8 then write_byte(read_word_and_advance_pc, value)
       when :direct16 then write_word(read_word_and_advance_pc, value)
@@ -1244,10 +1271,10 @@ module Rubyboy
       when :ff00_c then write_byte(0xff00 + @registers.c, value)
       when :hl_inc
         write_byte(@registers.hl, value)
-        @registers.increment16(:hl)
+        @registers.hl += 1
       when :hl_dec
         write_byte(@registers.hl, value)
-        @registers.decrement16(:hl)
+        @registers.hl -= 1
       when :indirect_hl then write_byte(@registers.hl, value)
       when :indirect_bc then write_byte(@registers.bc, value)
       when :indirect_de then write_byte(@registers.de, value)
