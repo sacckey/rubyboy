@@ -15,7 +15,7 @@ module Rubyboy
         when 0x08..0x09
           Nombc.new(rom)
         else
-          raise "Unsupported cartridge type: #{cartridge_type}"
+          raise "Unsupported cartridge type: #{rom.cartridge_type}"
         end
       end
     end

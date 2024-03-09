@@ -1,38 +1,48 @@
 # frozen_string_literal: true
 
-require 'raylib'
+require 'rubyboy/sdl'
 
 module Rubyboy
   class Lcd
-    include Raylib
-
-    WIDTH = 160
-    HEIGHT = 144
-    SCALE = 4
+    SCREEN_WIDTH = 160
+    SCREEN_HEIGHT = 144
+    SCALE = 3
 
     def initialize
-      InitWindow(WIDTH * SCALE, HEIGHT * SCALE, 'RUBY BOY')
-      image = GenImageColor(WIDTH, HEIGHT, BLACK)
-      image.format = PIXELFORMAT_UNCOMPRESSED_R8G8B8
-      @texture = LoadTextureFromImage(image)
-      @vector = Vector2.create(0, 0)
+      raise SDL.GetError() if SDL.InitSubSystem(SDL::INIT_VIDEO) != 0
+
+      @buffer = FFI::MemoryPointer.new(:uint8, SCREEN_WIDTH * SCREEN_HEIGHT * 3)
+      @window = SDL.CreateWindow('RUBY BOY', 0, 0, SCREEN_WIDTH * SCALE, SCREEN_HEIGHT * SCALE, SDL::SDL_WINDOW_RESIZABLE)
+
+      raise SDL.GetError() if @window.null?
+
+      @renderer = SDL.CreateRenderer(@window, -1, 0)
+      SDL.SetHint('SDL_HINT_RENDER_SCALE_QUALITY', '2')
+      SDL.RenderSetLogicalSize(@renderer, SCREEN_WIDTH * SCALE, SCREEN_HEIGHT * SCALE)
+      @texture = SDL.CreateTexture(@renderer, SDL::PIXELFORMAT_RGB24, 1, SCREEN_WIDTH, SCREEN_HEIGHT)
+      @event = FFI::MemoryPointer.new(:pointer)
     end
 
-    def draw(pixel_data)
-      UpdateTexture(@texture, pixel_data)
-
-      BeginDrawing()
-      ClearBackground(BLACK)
-      DrawTextureEx(@texture, @vector, 0.0, SCALE, WHITE)
-      EndDrawing()
+    def draw(framebuffer)
+      @buffer.write_array_of_uint8(framebuffer)
+      SDL.UpdateTexture(@texture, nil, @buffer, SCREEN_WIDTH * 3)
+      SDL.RenderClear(@renderer)
+      SDL.RenderCopy(@renderer, @texture, nil, nil)
+      SDL.RenderPresent(@renderer)
     end
 
     def window_should_close?
-      WindowShouldClose()
+      while SDL.PollEvent(@event) != 0
+        event_type = @event.read_int
+        return true if event_type == SDL::QUIT
+      end
+
+      false
     end
 
     def close_window
-      CloseWindow()
+      SDL.DestroyWindow(@window)
+      SDL.Quit
     end
   end
 end

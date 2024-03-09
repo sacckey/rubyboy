@@ -64,7 +64,7 @@ module Rubyboy
       @wly = 0x00
       @cycles = 0
       @interrupt = interrupt
-      @buffer = Array.new(144 * 160, 0x00)
+      @buffer = Array.new(144 * 160 * 3, 0x00)
       @bg_pixels = Array.new(LCD_WIDTH, 0x00)
     end
 
@@ -196,7 +196,11 @@ module Rubyboy
         x = (i + @scx) % 256
         tile_index = get_tile_index(tile_map_addr + (x / 8))
         pixel = get_pixel(tile_index << 4, 7 - (x % 8), (y % 8) * 2)
-        @buffer[@ly * LCD_WIDTH + i] = get_color(@bgp, pixel)
+        color = get_color(@bgp, pixel)
+        base = @ly * LCD_WIDTH * 3 + i * 3
+        @buffer[base] = color
+        @buffer[base + 1] = color
+        @buffer[base + 2] = color
         @bg_pixels[i] = pixel
       end
     end
@@ -215,7 +219,11 @@ module Rubyboy
         x = i - (@wx - 7)
         tile_index = get_tile_index(tile_map_addr + (x / 8))
         pixel = get_pixel(tile_index << 4, 7 - (x % 8), (y % 8) * 2)
-        @buffer[@ly * LCD_WIDTH + i] = get_color(@bgp, pixel)
+        color = get_color(@bgp, pixel)
+        base = @ly * LCD_WIDTH * 3 + i * 3
+        @buffer[base] = color
+        @buffer[base + 1] = color
+        @buffer[base + 2] = color
         @bg_pixels[i] = pixel
       end
       @wly += 1 if rendered
@@ -258,7 +266,11 @@ module Rubyboy
           next if pixel == 0 || i >= LCD_WIDTH
           next if flags[SPRITE_FLAGS[:priority]] == 1 && @bg_pixels[i] != 0
 
-          @buffer[@ly * LCD_WIDTH + i] = get_color(pallet, pixel)
+          color = get_color(pallet, pixel)
+          base = @ly * LCD_WIDTH * 3 + i * 3
+          @buffer[base] = color
+          @buffer[base + 1] = color
+          @buffer[base + 2] = color
         end
       end
     end

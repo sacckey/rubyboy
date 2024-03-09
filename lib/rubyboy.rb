@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
-require 'raylib'
+require 'rubyboy/sdl'
+require_relative 'rubyboy/apu'
 require_relative 'rubyboy/bus'
 require_relative 'rubyboy/cpu'
 require_relative 'rubyboy/ppu'
@@ -14,10 +15,7 @@ require_relative 'rubyboy/cartridge/factory'
 
 module Rubyboy
   class Console
-    include Raylib
-
     def initialize(rom_path)
-      load_raylib
       rom_data = File.open(rom_path, 'r') { _1.read.bytes }
       rom = Rom.new(rom_data)
       ram = Ram.new
@@ -26,19 +24,23 @@ module Rubyboy
       @ppu = Ppu.new(interrupt)
       @timer = Timer.new(interrupt)
       @joypad = Joypad.new(interrupt)
-      @bus = Bus.new(@ppu, rom, ram, mbc, @timer, interrupt, @joypad)
+      @apu = Apu.new
+      @bus = Bus.new(@ppu, rom, ram, mbc, @timer, interrupt, @joypad, @apu)
       @cpu = Cpu.new(@bus, interrupt)
       @lcd = Lcd.new
     end
 
     def start
-      until @lcd.window_should_close?
+      SDL.InitSubSystem(SDL::INIT_KEYBOARD)
+      loop do
         cycles = @cpu.exec
         @timer.step(cycles)
-        if @ppu.step(cycles)
-          draw
-          key_input_check
-        end
+        @apu.step(cycles)
+        next unless @ppu.step(cycles)
+
+        @lcd.draw(@ppu.buffer)
+        key_input_check
+        break if @lcd.window_should_close?
       end
       @lcd.close_window
     rescue StandardError => e
@@ -63,40 +65,15 @@ module Rubyboy
 
     private
 
-    def draw
-      pixel_data = buffer_to_pixel_data(@ppu.buffer)
-      @lcd.draw(pixel_data)
-    end
-
-    def buffer_to_pixel_data(buffer)
-      buffer.flat_map do |row|
-        [row, row, row]
-      end.pack('C*')
-    end
-
     def key_input_check
-      direction = (IsKeyUp(KEY_D) && 1 || 0) | ((IsKeyUp(KEY_A) && 1 || 0) << 1) | ((IsKeyUp(KEY_W) && 1 || 0) << 2) | ((IsKeyUp(KEY_S) && 1 || 0) << 3)
-      action = (IsKeyUp(KEY_K) && 1 || 0) | ((IsKeyUp(KEY_J) && 1 || 0) << 1) | ((IsKeyUp(KEY_U) && 1 || 0) << 2) | ((IsKeyUp(KEY_I) && 1 || 0) << 3)
-      @joypad.direction_button(direction)
-      @joypad.action_button(action)
-    end
+      SDL.PumpEvents
+      keyboard = SDL.GetKeyboardState(nil)
+      keyboard_state = keyboard.read_array_of_uint8(229)
 
-    def load_raylib
-      shared_lib_path = "#{Gem::Specification.find_by_name('raylib-bindings').full_gem_path}/lib/"
-      case RUBY_PLATFORM
-      when /mswin|msys|mingw/ # Windows
-        Raylib.load_lib("#{shared_lib_path}libraylib.dll")
-      when /darwin/ # macOS
-        arch = RUBY_PLATFORM.split('-')[0]
-        Raylib.load_lib(shared_lib_path + "libraylib.#{arch}.dylib")
-      when /linux/ # Ubuntu Linux (x86_64 or aarch64)
-        arch = RUBY_PLATFORM.split('-')[0]
-        Raylib.load_lib(shared_lib_path + "libraylib.#{arch}.so")
-      else
-        raise "Unknown system: #{RUBY_PLATFORM}"
-      end
-
-      SetTraceLogLevel(LOG_ERROR)
+      direction = (keyboard_state[SDL::SDL_SCANCODE_D]) | (keyboard_state[SDL::SDL_SCANCODE_A] << 1) | (keyboard_state[SDL::SDL_SCANCODE_W] << 2) | (keyboard_state[SDL::SDL_SCANCODE_S] << 3)
+      action = (keyboard_state[SDL::SDL_SCANCODE_K]) | (keyboard_state[SDL::SDL_SCANCODE_J] << 1) | (keyboard_state[SDL::SDL_SCANCODE_U] << 2) | (keyboard_state[SDL::SDL_SCANCODE_I] << 3)
+      @joypad.direction_button(15 - direction)
+      @joypad.action_button(15 - action)
     end
   end
 end
