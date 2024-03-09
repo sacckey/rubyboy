@@ -1,5 +1,13 @@
 ## [Unreleased]
 
+## [1.3.0] - 2024-03-09
+
+- Add ffi to dependencies
+- Add SDL2 wrapper
+- Add audio
+- Optimize cpu
+- Cache R/W methods
+
 ## [1.2.0] - 2024-01-09
 
 - Add logo
