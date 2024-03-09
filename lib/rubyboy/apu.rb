@@ -62,8 +62,8 @@ module Rubyboy
 
         raise "#{@nr51} #{@channel4.dac_output}, #{@channel3.dac_output}, #{@channel2.dac_output},#{@channel1.dac_output}" if left_sample.abs > 1.0 || right_sample.abs > 1.0
 
-        @samples[@sample_idx * 2] = (@nr50[4..6] / 7.0) * left_sample
-        @samples[@sample_idx * 2 + 1] = (@nr50[0..2] / 7.0) * right_sample
+        @samples[@sample_idx * 2] = (@nr50[4..6] / 7.0) * left_sample / 8.0
+        @samples[@sample_idx * 2 + 1] = (@nr50[0..2] / 7.0) * right_sample / 8.0
         @sample_idx += 1
       end
 
