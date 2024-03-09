@@ -32,8 +32,8 @@ module Rubyboy
       @channel3.step(cycles)
       @channel4.step(cycles)
 
-      if @cycles >= 0x1fff
-        @cycles -= 0x1fff
+      if @cycles >= 0x2000
+        @cycles -= 0x2000
 
         @channel1.step_fs(@fs)
         @channel2.step_fs(@fs)
