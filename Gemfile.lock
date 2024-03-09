@@ -3,8 +3,6 @@ PATH
   specs:
     rubyboy (1.2.0)
       ffi (~> 1.16, >= 1.16.3)
-      raylib-bindings (~> 0.6.0)
-      sdl2-bindings (~> 0.2.2)
 
 GEM
   remote: https://rubygems.org/
@@ -16,7 +14,6 @@ GEM
     heap-profiler (0.7.0)
     json (2.6.3)
     language_server-protocol (3.17.0.3)
-    opengl-bindings2 (2.0.1)
     parallel (1.23.0)
     parser (3.2.2.4)
       ast (~> 2.4.1)
@@ -24,12 +21,6 @@ GEM
     racc (1.7.1)
     rainbow (3.1.1)
     rake (13.0.6)
-    raylib-bindings (0.6.0-x86_64-darwin)
-      ffi (~> 1.16)
-      opengl-bindings2 (~> 2)
-    raylib-bindings (0.6.0-x86_64-linux)
-      ffi (~> 1.16)
-      opengl-bindings2 (~> 2)
     regexp_parser (2.8.2)
     rexml (3.2.6)
     rspec (3.12.0)
@@ -60,8 +51,6 @@ GEM
     rubocop-ast (1.29.0)
       parser (>= 3.2.1.0)
     ruby-progressbar (1.13.0)
-    sdl2-bindings (0.2.2)
-      ffi (~> 1.15)
     stackprof (0.2.25)
     unicode-display_width (2.5.0)
 
