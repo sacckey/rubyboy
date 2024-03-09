@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'ffi'
 
 module Rubyboy
@@ -24,33 +26,33 @@ module Rubyboy
     SDL_SCANCODE_I = 12
 
     attach_function :Init, 'SDL_Init', [:uint32], :int
-    attach_function :InitSubSystem, 'SDL_InitSubSystem', [ :uint32 ], :int
-    attach_function :CreateWindow, 'SDL_CreateWindow', [ :string, :int, :int, :int, :int, :uint32 ], :pointer
+    attach_function :InitSubSystem, 'SDL_InitSubSystem', [:uint32], :int
+    attach_function :CreateWindow, 'SDL_CreateWindow', %i[string int int int int uint32], :pointer
     attach_function :DestroyWindow, 'SDL_DestroyWindow', [:pointer], :void
-    attach_function :CreateRenderer, 'SDL_CreateRenderer', [:pointer, :int, :uint32], :pointer
-    attach_function :CreateTexture, 'SDL_CreateTexture', [:pointer, :uint32, :int, :int, :int], :pointer
-    attach_function :UpdateTexture, 'SDL_UpdateTexture', [:pointer, :pointer, :pointer, :int], :int
-    attach_function :LockTexture, 'SDL_LockTexture', [:pointer, :pointer, :pointer, :int], :int
+    attach_function :CreateRenderer, 'SDL_CreateRenderer', %i[pointer int uint32], :pointer
+    attach_function :CreateTexture, 'SDL_CreateTexture', %i[pointer uint32 int int int], :pointer
+    attach_function :UpdateTexture, 'SDL_UpdateTexture', %i[pointer pointer pointer int], :int
+    attach_function :LockTexture, 'SDL_LockTexture', %i[pointer pointer pointer int], :int
     attach_function :UnlockTexture, 'SDL_UnlockTexture', [:pointer], :void
     attach_function :RenderClear, 'SDL_RenderClear', [:pointer], :int
-    attach_function :RenderCopy, 'SDL_RenderCopy', [:pointer, :pointer, :pointer, :pointer], :int
+    attach_function :RenderCopy, 'SDL_RenderCopy', %i[pointer pointer pointer pointer], :int
     attach_function :RenderPresent, 'SDL_RenderPresent', [:pointer], :int
     attach_function :PumpEvents, 'SDL_PumpEvents', [], :void
     attach_function :GetKeyboardState, 'SDL_GetKeyboardState', [:pointer], :pointer
-    attach_function :SetHint, 'SDL_SetHint', [:string, :string], :int
-    attach_function :RenderSetLogicalSize, 'SDL_RenderSetLogicalSize', [:pointer, :int, :int], :int
-    attach_function :SetWindowTitle, 'SDL_SetWindowTitle', [:pointer, :string], :void
+    attach_function :SetHint, 'SDL_SetHint', %i[string string], :int
+    attach_function :RenderSetLogicalSize, 'SDL_RenderSetLogicalSize', %i[pointer int int], :int
+    attach_function :SetWindowTitle, 'SDL_SetWindowTitle', %i[pointer string], :void
     attach_function :RaiseWindow, 'SDL_RaiseWindow', [:pointer], :void
     attach_function :GetError, 'SDL_GetError', [], :string
-    attach_function :SetRenderDrawColor, 'SDL_SetRenderDrawColor', [:pointer, :uint8, :uint8, :uint8, :uint8], :int
+    attach_function :SetRenderDrawColor, 'SDL_SetRenderDrawColor', %i[pointer uint8 uint8 uint8 uint8], :int
     attach_function :PollEvent, 'SDL_PollEvent', [:pointer], :int
     attach_function :Quit, 'SDL_Quit', [], :void
 
     AUDIO_F32SYS = 0x8120
-    attach_function :OpenAudioDevice, 'SDL_OpenAudioDevice', [:string, :int, :pointer, :pointer, :int], :uint32
-    attach_function :PauseAudioDevice, 'SDL_PauseAudioDevice', [:uint32, :int], :void
+    attach_function :OpenAudioDevice, 'SDL_OpenAudioDevice', %i[string int pointer pointer int], :uint32
+    attach_function :PauseAudioDevice, 'SDL_PauseAudioDevice', %i[uint32 int], :void
     attach_function :GetQueuedAudioSize, 'SDL_GetQueuedAudioSize', [:uint32], :uint32
-    attach_function :QueueAudio, 'SDL_QueueAudio', [:uint32, :pointer, :uint32], :int
+    attach_function :QueueAudio, 'SDL_QueueAudio', %i[uint32 pointer uint32], :int
 
     class AudioSpec < FFI::Struct
       layout(
@@ -62,7 +64,7 @@ module Rubyboy
         :padding, :ushort,
         :size, :uint,
         :callback, :pointer,
-        :userdata, :pointer,
+        :userdata, :pointer
       )
     end
   end

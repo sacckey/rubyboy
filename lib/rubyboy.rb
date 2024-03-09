@@ -32,15 +32,15 @@ module Rubyboy
 
     def start
       SDL.InitSubSystem(SDL::INIT_KEYBOARD)
-      while true
+      loop do
         cycles = @cpu.exec
         @timer.step(cycles)
         @apu.step(cycles)
-        if @ppu.step(cycles)
-          @lcd.draw(@ppu.buffer)
-          key_input_check
-          break if @lcd.window_should_close?
-        end
+        next unless @ppu.step(cycles)
+
+        @lcd.draw(@ppu.buffer)
+        key_input_check
+        break if @lcd.window_should_close?
       end
       @lcd.close_window
     rescue StandardError => e

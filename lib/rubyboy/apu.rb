@@ -67,10 +67,10 @@ module Rubyboy
         @sample_idx += 1
       end
 
-      if @sample_idx >= 512
-        @sample_idx = 0
-        @audio.queue(@samples)
-      end
+      return if @sample_idx < 512
+
+      @sample_idx = 0
+      @audio.queue(@samples)
     end
 
     def read_byte(addr)

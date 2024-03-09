@@ -68,7 +68,7 @@ module Rubyboy
           @write_methods[addr] = ->(value) { @interrupt.write_byte(addr, value) }
         else
           @read_methods[addr] = -> { 0xff }
-          @write_methods[addr] = ->(_value) { }
+          @write_methods[addr] = ->(_value) {}
         end
       end
     end

@@ -39,11 +39,11 @@ module Rubyboy
       def step(cycles)
         @cycles += cycles
 
-        if @cycles >= @frequency_timer
-          @cycles -= @frequency_timer
-          @frequency_timer = (2048 - @frequency) * 4
-          @wave_duty_position = (@wave_duty_position + 1) % 8
-        end
+        return if @cycles < @frequency_timer
+
+        @cycles -= @frequency_timer
+        @frequency_timer = (2048 - @frequency) * 4
+        @wave_duty_position = (@wave_duty_position + 1) % 8
       end
 
       def step_fs(fs)
@@ -53,10 +53,10 @@ module Rubyboy
       end
 
       def length
-        if @length_enabled && @length_timer > 0
-          @length_timer -= 1
-          @enabled &= @length_timer > 0
-        end
+        return unless @length_enabled && @length_timer > 0
+
+        @length_timer -= 1
+        @enabled &= @length_timer > 0
       end
 
       def envelope
