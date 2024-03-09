@@ -49,7 +49,7 @@ module Rubyboy
       end
       @lcd.close_window
     rescue StandardError => e
-      p e.to_s[0, 100]
+      puts e.to_s[0, 100]
       raise e
     end
 
