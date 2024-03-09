@@ -17,8 +17,6 @@ module Rubyboy
       desired[:samples] = SAMPLES * 2
 
       @device = SDL.OpenAudioDevice(nil, 0, desired, nil, 0)
-      @audio_buf = nil
-      @audio_buf_len = 0
 
       SDL.PauseAudioDevice(@device, 0)
     end
