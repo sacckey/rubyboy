@@ -22,7 +22,9 @@ module Rubyboy
     end
 
     def queue(buffer)
-      sleep(0.001) while SDL.GetQueuedAudioSize(@device) > 8192
+      # sleep(0.001) while SDL.GetQueuedAudioSize(@device) > 8192
+
+      SDL.ClearQueuedAudio(@device) if SDL.GetQueuedAudioSize(@device) > 8192
 
       buf_ptr = FFI::MemoryPointer.new(:float, buffer.size)
       buf_ptr.put_array_of_float(0, buffer)
