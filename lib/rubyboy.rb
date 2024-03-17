@@ -15,6 +15,9 @@ require_relative 'rubyboy/cartridge/factory'
 
 module Rubyboy
   class Console
+    CPU_CLOCK_HZ = 4_194_304
+    CYCLE_NANOSEC = 1_000_000_000 / CPU_CLOCK_HZ
+
     def initialize(rom_path)
       rom_data = File.open(rom_path, 'r') { _1.read.bytes }
       rom = Rom.new(rom_data)
@@ -37,15 +40,25 @@ module Rubyboy
 
     def start
       SDL.InitSubSystem(SDL::INIT_KEYBOARD)
-      loop do
-        cycles = @cpu.exec
-        @timer.step(cycles)
-        @apu.step(cycles)
-        next unless @ppu.step(cycles)
 
-        @lcd.draw(@ppu.buffer)
-        key_input_check
-        break if @lcd.window_should_close?
+      start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC, :nanosecond)
+      elapsed_machine_time = 0
+      catch(:exit_loop) do
+        loop do
+          elapsed_real_time = Process.clock_gettime(Process::CLOCK_MONOTONIC, :nanosecond) - start_time
+          while elapsed_real_time > elapsed_machine_time
+            cycles = @cpu.exec
+            @timer.step(cycles)
+            @apu.step(cycles)
+            if @ppu.step(cycles)
+              @lcd.draw(@ppu.buffer)
+              key_input_check
+              throw :exit_loop if @lcd.window_should_close?
+            end
+
+            elapsed_machine_time += cycles * CYCLE_NANOSEC
+          end
+        end
       end
       @lcd.close_window
     rescue StandardError => e
