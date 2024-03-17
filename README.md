@@ -8,8 +8,8 @@ A Game Boy emulator written in Ruby
 
 ## Screenshots
 <div align="center">
-  <img src="/resource/screenshots/pokemon.png" width="480px"/>
-  <img src="/resource/screenshots/puyopuyo.png" width="480px"/>
+  <img src="/resource/screenshots/pokemon.png" width="400px"/>
+  <img src="/resource/screenshots/puyopuyo.png" width="400px"/>
 </div>
 
 ## Requirements
