@@ -6,6 +6,12 @@
 
 A Game Boy emulator written in Ruby
 
+## Screenshots
+<div align="center">
+  <img src="/resource/screenshots/pokemon.png" width="480px"/>
+  <img src="/resource/screenshots/puyopuyo.png" width="480px"/>
+</div>
+
 ## Requirements
 [SDL2](https://wiki.libsdl.org/SDL2/Installation)
 
