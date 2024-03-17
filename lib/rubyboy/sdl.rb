@@ -53,6 +53,7 @@ module Rubyboy
     attach_function :PauseAudioDevice, 'SDL_PauseAudioDevice', %i[uint32 int], :void
     attach_function :GetQueuedAudioSize, 'SDL_GetQueuedAudioSize', [:uint32], :uint32
     attach_function :QueueAudio, 'SDL_QueueAudio', %i[uint32 pointer uint32], :int
+    attach_function :ClearQueuedAudio, 'SDL_ClearQueuedAudio', [:uint32], :void
 
     class AudioSpec < FFI::Struct
       layout(
