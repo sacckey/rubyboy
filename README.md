@@ -6,9 +6,15 @@
 
 A Game Boy emulator written in Ruby
 
+## Requirements
+[SDL2](https://wiki.libsdl.org/SDL2/Installation)
+
 ## Installation
 
 This project requires Ruby 3.2.0 or higher.
+
+> [!TIP]
+> To enhance performance, it is highly recommended to use Ruby 3.3.x with YJIT.
 
 Install the gem and add to the application's Gemfile by executing:
 
@@ -16,7 +22,7 @@ Install the gem and add to the application's Gemfile by executing:
 
 If bundler is not being used to manage dependencies, install the gem by executing:
 
-    $ gem install rubyboy
+    $ gem install ffi rubyboy
 
 ## Usage
 
