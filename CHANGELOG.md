@@ -1,5 +1,13 @@
 ## [Unreleased]
 
+## [1.3.1] - 2024-03-17
+
+- Enable YJIT when initialize
+- Down volume
+- Update README.md
+- Clear queued audio if buffer is full
+- Add CPU clock and cycle timing
+
 ## [1.3.0] - 2024-03-09
 
 - Add ffi to dependencies
