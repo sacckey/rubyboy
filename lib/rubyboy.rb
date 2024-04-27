@@ -31,11 +31,6 @@ module Rubyboy
       @bus = Bus.new(@ppu, rom, ram, mbc, @timer, interrupt, @joypad, @apu)
       @cpu = Cpu.new(@bus, interrupt)
       @lcd = Lcd.new
-
-      RubyVM::YJIT.enable
-
-      puts "Ruby: #{RUBY_VERSION}"
-      puts "YJIT: #{RubyVM::YJIT.enabled?}"
     end
 
     def start

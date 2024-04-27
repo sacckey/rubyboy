@@ -6,6 +6,9 @@ require 'bench'
 
 arg = ARGV[0]
 
+puts "Ruby: #{RUBY_VERSION}"
+puts "YJIT: #{RubyVM::YJIT.enabled?}"
+
 if arg == 'bench'
   Rubyboy::Bench.new.bench
 elsif arg == 'stackprof'
