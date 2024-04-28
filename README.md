@@ -34,6 +34,17 @@ If bundler is not being used to manage dependencies, install the gem by executin
 
     $ RUBYOPT=--yjit rubyboy <rom_path>
 
+| Key   | Button |
+| :---: | :----: |
+| `W`   | ↑      |
+| `A`   | ←      |
+| `S`   | ↓      |
+| `D`   | →      |
+| `J`   | A      |
+| `K`   | B      |
+| `U`   | Select |
+| `I`   | Start  |
+
 ## Contributing
 
 Bug reports and pull requests are welcome on GitHub at https://github.com/sacckey/rubyboy. This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [code of conduct](https://github.com/sacckey/rubyboy/blob/main/CODE_OF_CONDUCT.md).
