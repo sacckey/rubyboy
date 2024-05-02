@@ -61,19 +61,20 @@ module Rubyboy
       raise e
     end
 
-    def bench
-      cnt = 0
-      start_time = Time.now
-      while cnt < 1500
+    def bench(frames)
+      @lcd.close_window
+      frame_count = 0
+      start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC, :nanosecond)
+      while frame_count < frames
         cycles = @cpu.exec
         @timer.step(cycles)
         if @ppu.step(cycles)
           key_input_check
-          cnt += 1
+          frame_count += 1
         end
       end
 
-      Time.now - start_time
+      Process.clock_gettime(Process::CLOCK_MONOTONIC, :nanosecond) - start_time
     end
 
     private

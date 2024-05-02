@@ -1,0 +1,39 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'rubyboy'
+require 'bench'
+require 'optparse'
+
+options = {}
+begin
+  OptionParser.new do |opts|
+    opts.banner = "Usage: #{File.basename($PROGRAM_NAME)} [options]"
+
+    opts.on('--count COUNT', Integer, 'Number of counts for the benchmark') do |count|
+      options[:count] = count
+    end
+
+    opts.on('--frames FRAMES', Integer, 'Number of frames to process') do |frames|
+      options[:frames] = frames
+    end
+
+    opts.on('--path PATH', String, 'Path to the ROM file') do |path|
+      options[:path] = path
+    end
+
+    opts.on('-h', '--help', 'Displays this help') do
+      puts opts
+      exit
+    end
+  end.parse!
+rescue OptionParser::ParseError => e
+  puts e.message
+  puts "Usage: #{File.basename($PROGRAM_NAME)} --count NUM --frames NUM --path FILEPATH"
+  exit 1
+end
+
+puts "Ruby: #{RUBY_VERSION}"
+puts "YJIT: #{RubyVM::YJIT.enabled?}"
+
+Rubyboy::Bench.new.bench(**options)

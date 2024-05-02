@@ -11,16 +11,15 @@ module Rubyboy
       end
     end
 
-    def bench
-      bench_cnt = 3
+    def bench(count: 3, frames: 1500, path: 'lib/roms/tobu.gb')
       time_sum = 0
-      bench_cnt.times do |i|
-        time = Rubyboy::Console.new('lib/roms/tobu.gb').bench
+      count.times do |i|
+        time = Rubyboy::Console.new(path).bench(frames)
         time_sum += time
-        puts "#{i + 1}: #{time} sec"
+        puts "#{i + 1}: #{time / 1_000_000_000.0} sec"
       end
 
-      puts "FPS: #{1500 * bench_cnt / time_sum}"
+      puts "FPS: #{frames * count * 1_000_000_000.0 / time_sum}"
     end
   end
 end
