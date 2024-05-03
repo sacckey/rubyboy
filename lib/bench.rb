@@ -11,10 +11,10 @@ module Rubyboy
       end
     end
 
-    def bench(count: 3, frames: 1500, path: 'lib/roms/tobu.gb')
+    def bench(count: 3, frames: 1500, rom_path: 'lib/roms/tobu.gb')
       time_sum = 0
       count.times do |i|
-        time = Rubyboy::Emulator.new(path).bench(frames)
+        time = Rubyboy::Emulator.new(rom_path).bench(frames)
         time_sum += time
         puts "#{i + 1}: #{time / 1_000_000_000.0} sec"
       end
