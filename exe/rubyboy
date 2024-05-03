@@ -14,5 +14,5 @@ if arg == 'bench'
 elsif arg == 'stackprof'
   Rubyboy::Bench.new.stackprof
 else
-  Rubyboy::Console.new(arg).start
+  Rubyboy::Emulator.new(arg).start
 end
