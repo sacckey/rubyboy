@@ -1,5 +1,12 @@
 ## [Unreleased]
 
+## [1.3.2] - 2024-05-04
+
+- Revert "Enable YJIT when initialize"
+- Add rubyboy-bench command
+- Refactor Console class to use Emulator class
+- Add option parsing and update default ROM path
+
 ## [1.3.1] - 2024-03-17
 
 - Enable YJIT when initialize
