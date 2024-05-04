@@ -28,7 +28,7 @@ Gem::Specification.new do |spec|
     end
   end
   spec.bindir = 'exe'
-  spec.executables = ['rubyboy']
+  spec.executables = %w[rubyboy rubyboy-bench]
   spec.require_paths = ['lib']
 
   # Uncomment to register a new dependency of your gem
