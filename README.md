@@ -32,7 +32,18 @@ If bundler is not being used to manage dependencies, install the gem by executin
 
 ## Usage
 
-    $ rubyboy <rom_path>
+    $ RUBYOPT=--yjit rubyboy <rom_path>
+
+| Key   | Button |
+| :---: | :----: |
+| `W`   | ↑      |
+| `A`   | ←      |
+| `S`   | ↓      |
+| `D`   | →      |
+| `J`   | A      |
+| `K`   | B      |
+| `U`   | Select |
+| `I`   | Start  |
 
 ## Contributing
 
