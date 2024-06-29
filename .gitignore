@@ -9,5 +9,7 @@
 /build/
 /rubies/
 
+*.wasm
+
 # rspec failure tracking
 .rspec_status
