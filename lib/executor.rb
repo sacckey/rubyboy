@@ -13,6 +13,6 @@ class Executor
 
   def exec
     bin = @emulator.step.pack('C*')
-    File.binwrite(File.join('/OPTCARROT_TMP', 'video.data'), bin)
+    File.binwrite(File.join('/RUBYBOY_TMP', 'video.data'), bin)
   end
 end
