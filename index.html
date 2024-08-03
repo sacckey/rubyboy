@@ -1,10 +1,28 @@
-<html>
+<!DOCTYPE html>
+<html lang="ja">
   <head>
     <meta charset="utf-8"/>
     <title>RUBY BOY</title>
+    <link rel="stylesheet" href="styles.css">
   </head>
-  <body style="margin: 1rem;">
-    <canvas id="canvas" width="320" height="288"></canvas>
+  <body>
+    <div class="gameboy">
+      <div class="screen-container">
+        <canvas id="canvas" width="320" height="288"></canvas>
+      </div>
+      <div class="controls">
+        <div class="d-pad">
+          <div class="d-pad-horizontal"></div>
+          <div class="d-pad-vertical"></div>
+        </div>
+        <div class="buttons"></div>
+      </div>
+      <div class="start-select">
+        <button title="SELECT"></button>
+        <button title="START"></button>
+      </div>
+      <div class="logo">RUBY BOY</div>
+    </div>
     <script src="index.js"></script>
   </body>
 </html>
