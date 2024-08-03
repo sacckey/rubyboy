@@ -8,6 +8,14 @@ const tmpCanvasContext = tmpCanvas.getContext('2d');
 tmpCanvas.width = canvas.width;
 tmpCanvas.height = canvas.height;
 
+document.addEventListener('keydown', (event) => {
+  worker.postMessage({ type: 'keydown', code: event.code });
+});
+
+document.addEventListener('keyup', (event) => {
+  worker.postMessage({ type: 'keyup', code: event.code });
+});
+
 worker.onmessage = (event) => {
   if (event.data.type === 'pixelData') {
     const pixelData = new Uint8ClampedArray(event.data.data);

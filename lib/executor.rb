@@ -11,8 +11,8 @@ class Executor
     @emulator = Rubyboy::EmulatorWasm.new(rom_data)
   end
 
-  def exec
-    bin = @emulator.step.pack('C*')
+  def exec(direction_key = 0b1111, action_key = 0b1111)
+    bin = @emulator.step(direction_key, action_key).pack('C*')
     File.binwrite(File.join('/RUBYBOY_TMP', 'video.data'), bin)
   end
 end

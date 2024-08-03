@@ -1,6 +1,20 @@
 import { RubyVM } from 'https://cdn.jsdelivr.net/npm/@ruby/wasm-wasi@2.6.1/+esm';
 import { Directory, File, OpenDirectory, OpenFile, PreopenDirectory, WASI } from 'https://cdn.jsdelivr.net/npm/@bjorn3/browser_wasi_shim@0.3.0/+esm';
 
+const DIRECTION_KEY_MASKS = {
+  'KeyD': 0b0001, // Right
+  'KeyA': 0b0010, // Left
+  'KeyW': 0b0100, // Up
+  'KeyS': 0b1000  // Down
+};
+
+const ACTION_KEY_MASKS = {
+  'KeyK': 0b0001, // A
+  'KeyJ': 0b0010, // B
+  'KeyU': 0b0100, // Select
+  'KeyI': 0b1000  // Start
+};
+
 class Rubyboy {
   constructor() {
     this.wasmUrl = 'https://proxy.sacckey.dev/rubyboy.wasm';
@@ -20,6 +34,9 @@ class Rubyboy {
     });
     this.count = 0;
     this.lastTime = Date.now();
+
+    this.directionKey = 0b1111;
+    this.actionKey = 0b1111;
   }
 
   async init() {
@@ -51,7 +68,7 @@ class Rubyboy {
   }
 
   sendPixelData() {
-    this.vm.eval('$executor.exec');
+    this.vm.eval(`$executor.exec(${this.directionKey}, ${this.actionKey})`);
 
     this.count += 1;
     if (this.count === 100) {
@@ -75,14 +92,37 @@ class Rubyboy {
   }
 }
 
+const rubyboy = new Rubyboy();
+
 self.addEventListener('message', async (event) => {
   if (event.data.type === 'initRubyVM') {
     try {
-      const rubyboy = new Rubyboy();
       await rubyboy.init();
       rubyboy.emulationLoop();
     } catch (error) {
       postMessage({ type: 'error', message: error.message });
+    }
+  }
+
+  if (event.data.type === 'keydown' || event.data.type === 'keyup') {
+    const code = event.data.code;
+    const directionKeyMask = DIRECTION_KEY_MASKS[code];
+    const actionKeyMask = ACTION_KEY_MASKS[code];
+
+    if (directionKeyMask) {
+      if (event.data.type === 'keydown') {
+        rubyboy.directionKey &= ~directionKeyMask;
+      } else {
+        rubyboy.directionKey |= directionKeyMask;
+      }
+    }
+
+    if (actionKeyMask) {
+      if (event.data.type === 'keydown') {
+        rubyboy.actionKey &= ~actionKeyMask;
+      } else {
+        rubyboy.actionKey |= actionKeyMask;
+      }
     }
   }
 });

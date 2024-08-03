@@ -30,7 +30,9 @@ module Rubyboy
       @cpu = Cpu.new(@bus, interrupt)
     end
 
-    def step
+    def step(direction_key, action_key)
+      @joypad.direction_button(direction_key)
+      @joypad.action_button(action_key)
       loop do
         cycles = @cpu.exec
         @timer.step(cycles)
