@@ -1,5 +1,5 @@
 body {
-  background-color: #9BA5B7;
+  background-color: #f0d0ce;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -8,7 +8,7 @@ body {
   font-family: 'Helvetica', 'Arial', sans-serif;
 }
 .gameboy {
-  background-color: #8B956D;
+  background-color: #cc342d;
   border-radius: 10px 10px 70px 10px;
   padding: 40px 20px 60px;
   box-shadow: 5px 5px 15px rgba(0,0,0,0.3);
@@ -20,17 +20,17 @@ body {
   justify-content: flex-start;
 }
 .screen-container {
-  background-color: #9BA5B7;
+  background-color: #f0d0ce;
   border-radius: 10px;
   padding: 20px;
   margin-bottom: 80px;
 }
 #canvas {
-  background-color: #0F380F;
+  background-color: #881e1a;
   display: block;
 }
 .logo {
-  color: #3D3D3D;
+  color: #ffffff;
   font-size: 18px;
   font-weight: bold;
   margin-top: 20px;
@@ -46,12 +46,12 @@ body {
   width: 100px;
   height: 100px;
   position: relative;
-  background-color: #373737;
+  background-color: #881e1a;
   border-radius: 50%;
 }
 .d-pad-horizontal, .d-pad-vertical {
   position: absolute;
-  background-color: #1e1e1e;
+  background-color: #550e0c;
 }
 .d-pad-horizontal {
   width: 70px;
@@ -66,7 +66,7 @@ body {
   left: 39px;
 }
 .buttons {
-  background-color: #373737;
+  background-color: #881e1a;
   border-radius: 50%;
   width: 100px;
   height: 100px;
@@ -75,7 +75,7 @@ body {
 .buttons::before, .buttons::after {
   content: '';
   position: absolute;
-  background-color: #A93671;
+  background-color: #ff6b66;
   border-radius: 50%;
   width: 35px;
   height: 35px;
@@ -94,7 +94,7 @@ body {
   margin-bottom: 20px;
 }
 .start-select button {
-  background-color: #4d4d4d;
+  background-color: #881e1a;
   border: none;
   width: 50px;
   height: 15px;
