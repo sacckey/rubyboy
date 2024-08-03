@@ -1,0 +1,104 @@
+body {
+  background-color: #9BA5B7;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  margin: 0;
+  font-family: 'Helvetica', 'Arial', sans-serif;
+}
+.gameboy {
+  background-color: #8B956D;
+  border-radius: 10px 10px 70px 10px;
+  padding: 40px 20px 60px;
+  box-shadow: 5px 5px 15px rgba(0,0,0,0.3);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 620px;
+  width: 380px;
+  justify-content: flex-start;
+}
+.screen-container {
+  background-color: #9BA5B7;
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 80px;
+}
+#canvas {
+  background-color: #0F380F;
+  display: block;
+}
+.logo {
+  color: #3D3D3D;
+  font-size: 18px;
+  font-weight: bold;
+  margin-top: 20px;
+  letter-spacing: 1px;
+}
+.controls {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: 40px;
+}
+.d-pad {
+  width: 100px;
+  height: 100px;
+  position: relative;
+  background-color: #373737;
+  border-radius: 50%;
+}
+.d-pad-horizontal, .d-pad-vertical {
+  position: absolute;
+  background-color: #1e1e1e;
+}
+.d-pad-horizontal {
+  width: 70px;
+  height: 22px;
+  top: 39px;
+  left: 15px;
+}
+.d-pad-vertical {
+  width: 22px;
+  height: 70px;
+  top: 15px;
+  left: 39px;
+}
+.buttons {
+  background-color: #373737;
+  border-radius: 50%;
+  width: 100px;
+  height: 100px;
+  position: relative;
+}
+.buttons::before, .buttons::after {
+  content: '';
+  position: absolute;
+  background-color: #A93671;
+  border-radius: 50%;
+  width: 35px;
+  height: 35px;
+}
+.buttons::before {
+  top: 15px;
+  right: 15px;
+}
+.buttons::after {
+  bottom: 15px;
+  left: 15px;
+}
+.start-select {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+.start-select button {
+  background-color: #4d4d4d;
+  border: none;
+  width: 50px;
+  height: 15px;
+  margin: 0 15px;
+  transform: rotate(-25deg);
+  cursor: pointer;
+}
