@@ -23,12 +23,12 @@ class Rubyboy {
     rootContents.set('RUBYBOY_TMP', new Directory(new Map()));
     this.rootFs = rootContents
 
-    const args = ["ruby.wasm", "-e_=0"];
+    const args = ['ruby.wasm', '-e_=0'];
     this.wasi = new WASI(args, [], [
       new OpenFile(new File([])), // stdin
       new OpenFile(new File([])), // stdout
       new OpenFile(new File([])), // stderr
-      new PreopenDirectory("/", rootContents)
+      new PreopenDirectory('/', rootContents)
     ], {
       debug: false
     });
