@@ -15,4 +15,12 @@ class Executor
     bin = @emulator.step(direction_key, action_key).pack('C*')
     File.binwrite(File.join('/RUBYBOY_TMP', 'video.data'), bin)
   end
+
+  def read_rom_from_virtual_fs
+    rom_path = '/RUBYBOY_TMP/rom.data'
+    raise "ROM file not found in virtual filesystem at #{rom_path}" unless File.exist?(rom_path)
+
+    rom_data = File.open(rom_path, 'rb') { |file| file.read.bytes }
+    @emulator = Rubyboy::EmulatorWasm.new(rom_data)
+  end
 end

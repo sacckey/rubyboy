@@ -16,6 +16,21 @@ document.addEventListener('keyup', (event) => {
   worker.postMessage({ type: 'keyup', code: event.code });
 });
 
+const rom = document.getElementById('rom');
+rom.addEventListener('change', (event) => {
+  const file = event.target.files[0];
+  if (file) {
+    const reader = new FileReader();
+
+    reader.onload = (e) => {
+      const romData = e.target.result;
+      worker.postMessage({ type: 'loadROM', data: romData }, [romData]);
+    };
+
+    reader.readAsArrayBuffer(file);
+  }
+});
+
 worker.onmessage = (event) => {
   if (event.data.type === 'pixelData') {
     const pixelData = new Uint8ClampedArray(event.data.data);
@@ -24,9 +39,15 @@ worker.onmessage = (event) => {
     canvasContext.drawImage(tmpCanvas, 0, 0);
   }
 
+  if (event.data.type === 'initialized') {
+    rom.disabled = false;
+    document.querySelector('.upload-button').classList.remove('disabled');
+    worker.postMessage({ type: 'startRubyboy' });
+  }
+
   if (event.data.type === 'error') {
     console.error('Error from Worker:', event.data.message);
   }
 };
 
-worker.postMessage({ type: 'initRubyVM' });
+worker.postMessage({ type: 'initRubyboy' });

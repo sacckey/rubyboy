@@ -95,9 +95,17 @@ class Rubyboy {
 const rubyboy = new Rubyboy();
 
 self.addEventListener('message', async (event) => {
-  if (event.data.type === 'initRubyVM') {
+  if (event.data.type === 'initRubyboy') {
     try {
       await rubyboy.init();
+      postMessage({ type: 'initialized', message: 'ok' });
+    } catch (error) {
+      postMessage({ type: 'error', message: error.message });
+    }
+  }
+
+  if (event.data.type === 'startRubyboy') {
+    try {
       rubyboy.emulationLoop();
     } catch (error) {
       postMessage({ type: 'error', message: error.message });
@@ -124,5 +132,14 @@ self.addEventListener('message', async (event) => {
         rubyboy.actionKey |= actionKeyMask;
       }
     }
+  }
+
+  if (event.data.type === 'loadROM') {
+    const romFile = new File(new Uint8Array(event.data.data));
+    const tmpDir = rubyboy.rootFs.get('RUBYBOY_TMP');
+    tmpDir.contents.set('rom.data', romFile);
+    rubyboy.vm.eval(`
+      $executor.read_rom_from_virtual_fs
+    `);
   }
 });
