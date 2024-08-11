@@ -161,6 +161,7 @@ body {
   margin-left: 0;
   width: 100%;
   box-sizing: border-box;
+  text-align: center;
 }
 
 .rom-upload-button.disabled {
@@ -183,7 +184,6 @@ body {
   background-color: #cc342d;
   color: white;
   text-align: center;
-  padding: 10px;
   width: 100%;
   box-sizing: border-box;
   margin-top: 20px;
@@ -205,7 +205,7 @@ kbd {
   font-family: Courier;
 }
 
-@media (min-width: 768px) {
+@media (min-width: 900px) {
   .main-content {
     flex-direction: row;
     justify-content: center;
