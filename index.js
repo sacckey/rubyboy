@@ -16,8 +16,8 @@ document.addEventListener('keyup', (event) => {
   worker.postMessage({ type: 'keyup', code: event.code });
 });
 
-const rom = document.getElementById('rom');
-rom.addEventListener('change', (event) => {
+const romInput = document.getElementById('rom-input');
+romInput.addEventListener('change', (event) => {
   const file = event.target.files[0];
   if (file) {
     const reader = new FileReader();
@@ -31,6 +31,8 @@ rom.addEventListener('change', (event) => {
   }
 });
 
+const romSelectBox = document.getElementById('rom-select-box');
+
 worker.onmessage = (event) => {
   if (event.data.type === 'pixelData') {
     const pixelData = new Uint8ClampedArray(event.data.data);
@@ -40,8 +42,9 @@ worker.onmessage = (event) => {
   }
 
   if (event.data.type === 'initialized') {
-    rom.disabled = false;
-    document.querySelector('.upload-button').classList.remove('disabled');
+    romSelectBox.disabled = false;
+    romInput.disabled = false;
+    document.getElementById('rom-upload-button').classList.remove('disabled');
     worker.postMessage({ type: 'startRubyboy' });
   }
 

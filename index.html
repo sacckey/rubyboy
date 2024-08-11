@@ -6,29 +6,54 @@
     <link rel="stylesheet" href="styles.css">
   </head>
   <body>
-    <div class="gameboy">
-      <div class="screen-container">
-        <canvas id="canvas" width="320" height="288"></canvas>
-      </div>
-      <div class="controls">
-        <div class="d-pad">
-          <div class="d-pad-horizontal"></div>
-          <div class="d-pad-vertical"></div>
+    <div class="main-content">
+      <div class="gameboy">
+        <div class="screen-container">
+          <canvas id="canvas" width="320" height="288"></canvas>
         </div>
-        <div class="buttons"></div>
+        <div class="controls">
+          <div class="d-pad">
+            <div class="d-pad-horizontal"></div>
+            <div class="d-pad-vertical"></div>
+          </div>
+          <div class="buttons"></div>
+        </div>
+        <div class="start-select">
+          <button title="SELECT"></button>
+          <button title="START"></button>
+        </div>
+        <div class="logo">RUBY BOY</div>
       </div>
-      <div class="start-select">
-        <button title="SELECT"></button>
-        <button title="START"></button>
+      <div class="control-panel">
+        <section id="rom-select">
+          <h3>ROM Select</h3>
+          <select id="rom-select-box" class="rom-select-box" disabled >
+            <option value="tobu.gb">Tobu Tobu Girl</option>
+            <option value="bgbtest.gb">BGB Test</option>
+          </select>
+          <label id="rom-upload-button" class="rom-upload-button disabled">
+            <input type="file" id="rom-input" accept=".gb" disabled />
+            Upload
+          </label>
+        </section>
+        <section id="controls">
+          <h3>Controls</h3>
+          <div>
+            <kbd>w</kbd> <kbd>a</kbd> <kbd>s</kbd> <kbd>d</kbd>: ↑ ← ↓ →
+          </div>
+          <div>
+            <kbd>k</kbd> <kbd>j</kbd> <kbd>i</kbd> <kbd>u</kbd>: A B Start Select
+          </div>
+        </section>
+        <section id="performance">
+          <h3>Performance</h3>
+          <p>FPS: <span id="fps-display">0</span></p>
+        </section>
       </div>
-      <div class="logo">RUBY BOY</div>
     </div>
-    <div>
-      <label class="upload-button disabled">
-        <input type="file" id="rom" accept=".gb" disabled />
-        Upload
-      </label>
-    </div>
+    <footer class="footer">
+      <p>&copy; 2024 sacckey | <a href="https://github.com/sacckey/rubyboy" target="_blank" rel="noopener noreferrer">GitHub</a></p>
+    </footer>
     <script src="index.js"></script>
   </body>
 </html>
