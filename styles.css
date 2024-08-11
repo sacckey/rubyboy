@@ -29,7 +29,7 @@ body {
   width: 100%;
   max-width: 380px;
   justify-content: flex-start;
-  margin-bottom: 30px;
+  margin-bottom: 20px;
 }
 
 .screen-container {
@@ -186,6 +186,7 @@ body {
   padding: 10px;
   width: 100%;
   box-sizing: border-box;
+  margin-top: 20px;
 }
 
 kbd {
