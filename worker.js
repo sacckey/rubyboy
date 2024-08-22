@@ -142,4 +142,10 @@ self.addEventListener('message', async (event) => {
       $executor.read_rom_from_virtual_fs
     `);
   }
+
+  if (event.data.type === 'loadPreInstalledRom') {
+    rubyboy.vm.eval(`
+      $executor.read_pre_installed_rom("${event.data.romName}")
+    `);
+  }
 });

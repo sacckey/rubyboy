@@ -32,6 +32,9 @@ romInput.addEventListener('change', (event) => {
 });
 
 const romSelectBox = document.getElementById('rom-select-box');
+romSelectBox.addEventListener('change', (event) => {
+  worker.postMessage({ type: 'loadPreInstalledRom', romName: event.target.value });
+});
 
 worker.onmessage = (event) => {
   if (event.data.type === 'pixelData') {

@@ -6,6 +6,8 @@ require 'json'
 require_relative 'rubyboy/emulator_wasm'
 
 class Executor
+  ALLOWED_ROMS = ['tobu.gb', 'bgbtest.gb'].freeze
+
   def initialize
     rom_data = File.open('lib/roms/tobu.gb', 'r') { _1.read.bytes }
     @emulator = Rubyboy::EmulatorWasm.new(rom_data)
@@ -21,6 +23,14 @@ class Executor
     raise "ROM file not found in virtual filesystem at #{rom_path}" unless File.exist?(rom_path)
 
     rom_data = File.open(rom_path, 'rb') { |file| file.read.bytes }
+    @emulator = Rubyboy::EmulatorWasm.new(rom_data)
+  end
+
+  def read_pre_installed_rom(rom_name)
+    raise 'ROM not found in allowed ROMs' unless ALLOWED_ROMS.include?(rom_name)
+
+    rom_path = File.join('lib/roms', rom_name)
+    rom_data = File.open(rom_path, 'r') { _1.read.bytes }
     @emulator = Rubyboy::EmulatorWasm.new(rom_data)
   end
 end
