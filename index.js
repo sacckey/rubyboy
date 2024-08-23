@@ -51,12 +51,21 @@ romSelectBox.addEventListener('change', (event) => {
   worker.postMessage({ type: 'loadPreInstalledRom', romName: event.target.value });
 });
 
+const times = [];
+const fpsDisplay = document.getElementById('fps-display');
 worker.onmessage = (event) => {
   if (event.data.type === 'pixelData') {
     const pixelData = new Uint8ClampedArray(event.data.data);
     const imageData = new ImageData(pixelData, 160, 144);
     tmpCanvasContext.putImageData(imageData, 0, 0);
     canvasContext.drawImage(tmpCanvas, 0, 0);
+
+    const now = performance.now();
+    while (times.length > 0 && times[0] <= now - 1000) {
+      times.shift();
+    }
+    times.push(now);
+    fpsDisplay.innerText = times.length.toString();
   }
 
   if (event.data.type === 'initialized') {
