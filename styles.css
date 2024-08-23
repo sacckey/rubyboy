@@ -71,23 +71,39 @@ body {
   border-radius: 50%;
 }
 
-.d-pad-horizontal, .d-pad-vertical {
+.d-pad-button {
   position: absolute;
   background-color: #550e0c;
+  border: none;
+  cursor: pointer;
 }
 
-.d-pad-horizontal {
-  width: 70px;
-  height: 22px;
-  top: 39px;
-  left: 15px;
+#d-pad-left, #d-pad-right {
+  width: 30px;
+  height: 30px;
+  top: 35px;
 }
 
-.d-pad-vertical {
-  width: 22px;
-  height: 70px;
-  top: 15px;
-  left: 39px;
+#d-pad-left {
+  left: 5px;
+}
+
+#d-pad-right {
+  right: 5px;
+}
+
+#d-pad-up, #d-pad-down {
+  width: 30px;
+  height: 30px;
+  left: 35px;
+}
+
+#d-pad-up {
+  top: 5px;
+}
+
+#d-pad-down {
+  bottom: 5px;
 }
 
 .buttons {
@@ -98,21 +114,23 @@ body {
   position: relative;
 }
 
-.buttons::before, .buttons::after {
-  content: '';
+.action-button {
   position: absolute;
   background-color: #ff6b66;
+  border: none;
   border-radius: 50%;
   width: 35px;
   height: 35px;
+  cursor: pointer;
+  color: #881e1a;
 }
 
-.buttons::before {
+#button-a {
   top: 15px;
   right: 15px;
 }
 
-.buttons::after {
+#button-b {
   bottom: 15px;
   left: 15px;
 }

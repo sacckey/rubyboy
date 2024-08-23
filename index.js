@@ -11,9 +11,24 @@ tmpCanvas.height = canvas.height;
 document.addEventListener('keydown', (event) => {
   worker.postMessage({ type: 'keydown', code: event.code });
 });
-
 document.addEventListener('keyup', (event) => {
   worker.postMessage({ type: 'keyup', code: event.code });
+});
+
+const handleButtonPress = (event) => {
+  event.preventDefault();
+  worker.postMessage({ type: 'keydown', code: event.target.dataset.code });
+}
+const handleButtonRelease = (event) => {
+  event.preventDefault();
+  worker.postMessage({ type: 'keyup', code: event.target.dataset.code });
+}
+const buttons = document.querySelectorAll('.d-pad-button, .action-button, .start-select-button');
+buttons.forEach(button => {
+  button.addEventListener('mousedown', handleButtonPress);
+  button.addEventListener('mouseup', handleButtonRelease);
+  button.addEventListener('touchstart', handleButtonPress);
+  button.addEventListener('touchend', handleButtonRelease);
 });
 
 const romInput = document.getElementById('rom-input');
