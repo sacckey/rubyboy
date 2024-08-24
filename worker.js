@@ -1,4 +1,4 @@
-import { RubyVM } from 'https://cdn.jsdelivr.net/npm/@ruby/wasm-wasi@2.6.1/+esm';
+import { RubyVM } from 'https://cdn.jsdelivr.net/npm/@ruby/wasm-wasi@2.6.2/+esm';
 import { Directory, File, OpenDirectory, OpenFile, PreopenDirectory, WASI } from 'https://cdn.jsdelivr.net/npm/@bjorn3/browser_wasi_shim@0.3.0/+esm';
 
 const DIRECTION_KEY_MASKS = {
