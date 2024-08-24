@@ -32,8 +32,6 @@ class Rubyboy {
     ], {
       debug: false
     });
-    this.count = 0;
-    this.lastTime = Date.now();
 
     this.directionKey = 0b1111;
     this.actionKey = 0b1111;
@@ -69,13 +67,6 @@ class Rubyboy {
 
   sendPixelData() {
     this.vm.eval(`$executor.exec(${this.directionKey}, ${this.actionKey})`);
-
-    this.count += 1;
-    if (this.count === 100) {
-      console.log('FPS: ', 100 * 1000 / (Date.now() - this.lastTime));
-      this.lastTime = Date.now();
-      this.count = 0;
-    }
 
     const tmpDir = this.rootFs.get('RUBYBOY_TMP');
     const op = new OpenDirectory(tmpDir);
