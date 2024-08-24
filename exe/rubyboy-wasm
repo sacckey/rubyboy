@@ -3,9 +3,9 @@
 
 case ARGV[0]
 when 'build'
-  command = %w[build --ruby-version 3.3 -o ruby-js.wasm]
+  command = %w[build --ruby-version 3.3 -o ./wasm/ruby-js.wasm]
 when 'pack'
-  command = %w[pack ruby-js.wasm --dir ./lib::/lib -o rubyboy.wasm]
+  command = %w[pack ./wasm/ruby-js.wasm --dir ./lib::/lib -o ./wasm/rubyboy.wasm]
 else
   puts "Invalid argument. Use 'build' or 'pack'."
   exit 1
