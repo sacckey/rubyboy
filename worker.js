@@ -21,7 +21,7 @@ class Rubyboy {
 
     const rootContents = new Map();
     rootContents.set('RUBYBOY_TMP', new Directory(new Map()));
-    this.rootFs = rootContents
+    this.rootFs = rootContents;
 
     const args = ['ruby.wasm', '-e_=0'];
     this.wasi = new WASI(args, [], [
