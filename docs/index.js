@@ -1,12 +1,42 @@
 const worker = new Worker('worker.js', { type: 'module' });
 
+const SCALE = 2;
 const canvas = document.getElementById('canvas');
 const canvasContext = canvas.getContext('2d');
-canvasContext.scale(2, 2);
+canvasContext.scale(SCALE, SCALE);
 const tmpCanvas = document.createElement('canvas');
 const tmpCanvasContext = tmpCanvas.getContext('2d');
 tmpCanvas.width = canvas.width;
 tmpCanvas.height = canvas.height;
+
+// Display "LOADING..."
+(() => {
+  const str = `
+    10000 01110 01110 11110 01110 10001 01110 00000 00000 00000
+    10000 10001 10001 10001 00100 11001 10000 00000 00000 00000
+    10000 10001 10001 10001 00100 10101 10011 00000 00000 00000
+    10000 10001 11111 10001 00100 10011 10001 01100 01100 01100
+    11111 01110 10001 11110 01110 10001 01110 01100 01100 01100
+  `
+  const dotSize = 2;
+  const rows = str.trim().split('\n')
+  const xSpacing = canvas.width / (2 * SCALE) - rows[0].length;
+  const ySpacing = canvas.height / (2 * SCALE) - rows.length;
+  canvasContext.fillStyle = 'white';
+
+  rows.forEach((row, y) => {
+    [...row.trim()].forEach((char, x) => {
+      if (char === '1') {
+        canvasContext.fillRect(
+          x * dotSize + xSpacing,
+          y * dotSize + ySpacing,
+          dotSize,
+          dotSize
+        );
+      }
+    });
+  });
+})();
 
 document.addEventListener('keydown', (event) => {
   worker.postMessage({ type: 'keydown', code: event.code });
