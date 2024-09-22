@@ -20,8 +20,8 @@ tmpCanvas.height = canvas.height;
   `
   const dotSize = 2;
   const rows = str.trim().split('\n')
-  const xSpacing = canvas.width / (2 * SCALE) - rows[0].length;
-  const ySpacing = canvas.height / (2 * SCALE) - rows.length;
+  const xSpacing = canvas.width / (2 * SCALE) - rows[0].length * dotSize / 2;
+  const ySpacing = canvas.height / (2 * SCALE) - rows.length * dotSize / 2;
   canvasContext.fillStyle = 'white';
 
   rows.forEach((row, y) => {
