@@ -21,7 +21,7 @@ body {
 .gameboy {
   background-color: #cc342d;
   border-radius: 10px 10px 70px 10px;
-  padding: 40px 20px 60px;
+  padding: 25px 20px 40px;
   box-shadow: 5px 5px 15px rgba(0,0,0,0.3);
   display: flex;
   flex-direction: column;
@@ -37,30 +37,22 @@ body {
   border-radius: 10px;
   padding: 20px;
   margin-bottom: 80px;
-  max-width: 100%;
+  width: 100%;
   box-sizing: border-box;
 }
 
 #canvas {
   background-color: #881e1a;
   display: block;
-  max-width: 100%;
+  width: 100%;
   height: auto;
-}
-
-.logo {
-  color: #ffffff;
-  font-size: 18px;
-  font-weight: bold;
-  margin-top: 20px;
-  letter-spacing: 1px;
 }
 
 .controls {
   display: flex;
   justify-content: space-between;
   width: 100%;
-  margin-bottom: 40px;
+  margin-bottom: 60px;
 }
 
 .d-pad {
@@ -138,7 +130,7 @@ body {
 .start-select {
   display: flex;
   justify-content: center;
-  margin-bottom: 20px;
+  margin-bottom: 50px;
 }
 
 .start-select button {
