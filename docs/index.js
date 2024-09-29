@@ -17,7 +17,7 @@ tmpCanvas.height = canvas.height;
     10000 10001 10001 10001 00100 10101 10011 00000 00000 00000
     10000 10001 11111 10001 00100 10011 10001 01100 01100 01100
     11111 01110 10001 11110 01110 10001 01110 01100 01100 01100
-  `
+  `;
   const dotSize = 2;
   const rows = str.trim().split('\n')
   const xSpacing = canvas.width / (2 * SCALE) - rows[0].length * dotSize / 2;
