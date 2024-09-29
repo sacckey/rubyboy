@@ -1,5 +1,9 @@
 ## [Unreleased]
 
+## [1.4.0] - 2024-09-29
+
+- Works on browser using ruby.wasm
+
 ## [1.3.2] - 2024-05-04
 
 - Revert "Enable YJIT when initialize"
