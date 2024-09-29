@@ -102,9 +102,7 @@ module Rubyboy
     def write_byte(addr, value)
       case addr
       when 0x8000..0x9fff
-        if @mode != MODE[:drawing]
-          @vram[addr - 0x8000] = value
-        end
+        @vram[addr - 0x8000] = value if @mode != MODE[:drawing]
       when 0xfe00..0xfe9f
         @oam[addr - 0xfe00] = value if @mode != MODE[:oam_scan] && @mode != MODE[:drawing]
       when 0xff40
