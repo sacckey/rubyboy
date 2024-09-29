@@ -6,6 +6,8 @@
 
 A Game Boy emulator written in Ruby
 
+**[Try the demo in your browser!](https://sacckey.github.io/rubyboy/)** - Powered by WebAssembly
+
 ## Screenshots
 <div align="center">
   <img src="/resource/screenshots/pokemon.png" width="400px"/>
