@@ -13,3 +13,8 @@ group :development, :test do
   gem 'rubocop', '~> 1.57'
   gem 'stackprof', '~> 0.2.25'
 end
+
+group :wasm do
+  gem 'js', '2.6.2'
+  gem 'ruby_wasm', '2.6.2'
+end
