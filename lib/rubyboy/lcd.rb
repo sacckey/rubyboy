@@ -12,7 +12,7 @@ module Rubyboy
       raise SDL.GetError() if SDL.InitSubSystem(SDL::INIT_VIDEO) != 0
 
       @buffer = FFI::MemoryPointer.new(:uint8, SCREEN_WIDTH * SCREEN_HEIGHT * 3)
-      @window = SDL.CreateWindow('RUBY BOY', 0, 0, SCREEN_WIDTH * SCALE, SCREEN_HEIGHT * SCALE, SDL::SDL_WINDOW_RESIZABLE)
+      @window = SDL.CreateWindow('Ruby Boy', 0, 0, SCREEN_WIDTH * SCALE, SCREEN_HEIGHT * SCALE, SDL::SDL_WINDOW_RESIZABLE)
 
       raise SDL.GetError() if @window.null?
 

@@ -12,7 +12,7 @@ module Rubyboy
       SCALE = 4
 
       def initialize
-        InitWindow(WIDTH * SCALE, HEIGHT * SCALE, 'RUBY BOY')
+        InitWindow(WIDTH * SCALE, HEIGHT * SCALE, 'Ruby Boy')
         image = GenImageColor(WIDTH, HEIGHT, BLACK)
         image.format = PIXELFORMAT_UNCOMPRESSED_R8G8B8
         @texture = LoadTextureFromImage(image)
