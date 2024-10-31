@@ -4,6 +4,11 @@ module Rubyboy
   class Ppu
     attr_reader :buffer
 
+    PIXEL_FORMATS = {
+      rgb: 3,
+      rgba: 4
+    }.freeze
+
     MODE = {
       hblank: 0,
       vblank: 1,
@@ -46,7 +51,9 @@ module Rubyboy
     HBLANK_CYCLES = 204
     ONE_LINE_CYCLES = OAM_SCAN_CYCLES + DRAWING_CYCLES + HBLANK_CYCLES
 
-    def initialize(interrupt)
+    def initialize(interrupt, pixel_format = :rgb)
+      raise ArgumentError, 'Invalid pixel format' unless PIXEL_FORMATS.key?(pixel_format)
+
       @mode = MODE[:oam_scan]
       @lcdc = 0x91
       @stat = 0x00
@@ -64,7 +71,8 @@ module Rubyboy
       @wly = 0x00
       @cycles = 0
       @interrupt = interrupt
-      @buffer = Array.new(144 * 160 * 3, 0x00)
+      @channel_count = PIXEL_FORMATS[pixel_format]
+      @buffer = Array.new(144 * 160 * @channel_count, 0xff)
       @bg_pixels = Array.new(LCD_WIDTH, 0x00)
     end
 
@@ -197,7 +205,7 @@ module Rubyboy
         tile_index = get_tile_index(tile_map_addr + (x / 8))
         pixel = get_pixel(tile_index << 4, 7 - (x % 8), (y % 8) * 2)
         color = get_color(@bgp, pixel)
-        base = @ly * LCD_WIDTH * 3 + i * 3
+        base = (@ly * LCD_WIDTH + i) * @channel_count
         @buffer[base] = color
         @buffer[base + 1] = color
         @buffer[base + 2] = color
@@ -220,7 +228,7 @@ module Rubyboy
         tile_index = get_tile_index(tile_map_addr + (x / 8))
         pixel = get_pixel(tile_index << 4, 7 - (x % 8), (y % 8) * 2)
         color = get_color(@bgp, pixel)
-        base = @ly * LCD_WIDTH * 3 + i * 3
+        base = (@ly * LCD_WIDTH + i) * @channel_count
         @buffer[base] = color
         @buffer[base + 1] = color
         @buffer[base + 2] = color
@@ -267,7 +275,7 @@ module Rubyboy
           next if flags[SPRITE_FLAGS[:priority]] == 1 && @bg_pixels[i] != 0
 
           color = get_color(pallet, pixel)
-          base = @ly * LCD_WIDTH * 3 + i * 3
+          base = (@ly * LCD_WIDTH + i) * @channel_count
           @buffer[base] = color
           @buffer[base + 1] = color
           @buffer[base + 2] = color
