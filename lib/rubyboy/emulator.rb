@@ -18,6 +18,7 @@ module Rubyboy
       @bus = Bus.new(@ppu, rom, ram, mbc, @timer, interrupt, @joypad, @apu)
       @cpu = Cpu.new(@bus, interrupt)
       @lcd = Lcd.new
+      @audio = Audio.new
     end
 
     def start
@@ -31,7 +32,7 @@ module Rubyboy
           while elapsed_real_time > elapsed_machine_time
             cycles = @cpu.exec
             @timer.step(cycles)
-            @apu.step(cycles)
+            @audio.queue(@apu.samples) if @apu.step(cycles)
             if @ppu.step(cycles)
               @lcd.draw(@ppu.buffer)
               key_input_check

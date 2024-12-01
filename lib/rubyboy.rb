@@ -2,6 +2,7 @@
 
 require 'rubyboy/sdl'
 require_relative 'rubyboy/apu'
+require_relative 'rubyboy/audio'
 require_relative 'rubyboy/bus'
 require_relative 'rubyboy/cpu'
 require_relative 'rubyboy/emulator'

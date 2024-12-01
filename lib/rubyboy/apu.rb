@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require_relative 'audio'
 require_relative 'apu_channels/channel1'
 require_relative 'apu_channels/channel2'
 require_relative 'apu_channels/channel3'
@@ -8,8 +7,9 @@ require_relative 'apu_channels/channel4'
 
 module Rubyboy
   class Apu
+    attr_reader :samples
+
     def initialize
-      @audio = Audio.new
       @nr50 = 0
       @nr51 = 0
       @cycles = 0
@@ -67,10 +67,10 @@ module Rubyboy
         @sample_idx += 1
       end
 
-      return if @sample_idx < 512
+      return false if @sample_idx < 512
 
       @sample_idx = 0
-      @audio.queue(@samples)
+      true
     end
 
     def read_byte(addr)
