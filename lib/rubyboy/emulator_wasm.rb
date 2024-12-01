@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require_relative 'apu_wasm'
+require_relative 'apu'
 require_relative 'bus'
 require_relative 'cpu'
 require_relative 'emulator'
@@ -25,7 +25,7 @@ module Rubyboy
       @ppu = Ppu.new(interrupt, :rgba)
       @timer = Timer.new(interrupt)
       @joypad = Joypad.new(interrupt)
-      @apu = ApuWasm.new
+      @apu = Apu.new
       @bus = Bus.new(@ppu, rom, ram, mbc, @timer, interrupt, @joypad, @apu)
       @cpu = Cpu.new(@bus, interrupt)
     end
