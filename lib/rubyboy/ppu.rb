@@ -74,6 +74,7 @@ module Rubyboy
       @channel_count = PIXEL_FORMATS[pixel_format]
       @buffer = Array.new(144 * 160 * @channel_count, 0xff)
       @bg_pixels = Array.new(LCD_WIDTH, 0x00)
+      @tile_cache = Array.new(384) { Array.new(64, 0) }
     end
 
     def read_byte(addr)
@@ -110,7 +111,10 @@ module Rubyboy
     def write_byte(addr, value)
       case addr
       when 0x8000..0x9fff
-        @vram[addr - 0x8000] = value if @mode != MODE[:drawing]
+        if @mode != MODE[:drawing]
+          @vram[addr - 0x8000] = value
+          update_tile_cache(addr - 0x8000) if addr < 0x9800
+        end
       when 0xfe00..0xfe9f
         @oam[addr - 0xfe00] = value if @mode != MODE[:oam_scan] && @mode != MODE[:drawing]
       when 0xff40
@@ -200,10 +204,11 @@ module Rubyboy
       y = (@ly + @scy) % 256
       tile_map_addr = @lcdc[LCDC[:bg_tile_map_area]] == 0 ? 0x1800 : 0x1c00
       tile_map_addr += (y / 8) * 32
+      tile_y = y % 8 * 8
       LCD_WIDTH.times do |i|
         x = (i + @scx) % 256
         tile_index = get_tile_index(tile_map_addr + (x / 8))
-        pixel = get_pixel(tile_index << 4, 7 - (x % 8), (y % 8) * 2)
+        pixel = @tile_cache[tile_index][tile_y + (x % 8)]
         color = get_color(@bgp, pixel)
         base = (@ly * LCD_WIDTH + i) * @channel_count
         @buffer[base] = color
@@ -220,13 +225,14 @@ module Rubyboy
       y = @wly
       tile_map_addr = @lcdc[LCDC[:window_tile_map_area]] == 0 ? 0x1800 : 0x1c00
       tile_map_addr += (y / 8) * 32
+      tile_y = y % 8 * 8
       LCD_WIDTH.times do |i|
         next if i < @wx - 7
 
         rendered = true
         x = i - (@wx - 7)
         tile_index = get_tile_index(tile_map_addr + (x / 8))
-        pixel = get_pixel(tile_index << 4, 7 - (x % 8), (y % 8) * 2)
+        pixel = @tile_cache[tile_index][tile_y + (x % 8)]
         color = get_color(@bgp, pixel)
         base = (@ly * LCD_WIDTH + i) * @channel_count
         @buffer[base] = color
@@ -263,12 +269,12 @@ module Rubyboy
         y = (@ly - sprite[:y]) % 256
         y = sprite_height - y - 1 if flags[SPRITE_FLAGS[:y_flip]] == 1
         tile_index = (tile_index + 1) % 256 if y >= 8
-        y %= 8
+        tile_y = y % 8 * 8
 
         8.times do |x|
           x_flipped = flags[SPRITE_FLAGS[:x_flip]] == 1 ? 7 - x : x
 
-          pixel = get_pixel(tile_index << 4, 7 - x_flipped, (y % 8) * 2)
+          pixel = @tile_cache[tile_index][tile_y + x_flipped]
           i = (sprite[:x] + x) % 256
 
           next if pixel == 0 || i >= LCD_WIDTH
@@ -285,13 +291,25 @@ module Rubyboy
 
     private
 
+    def update_tile_cache(addr)
+      tile_index = addr >> 4
+
+      row = (addr % 16) >> 1
+      return if row >= 8
+
+      byte1 = @vram[addr & ~1]
+      byte2 = @vram[addr | 1]
+
+      8.times do |col|
+        bit_index = 7 - col
+        pixel = ((byte1 >> bit_index) & 1) | (((byte2 >> bit_index) & 1) << 1)
+        @tile_cache[tile_index][row * 8 + col] = pixel
+      end
+    end
+
     def get_tile_index(tile_map_addr)
       tile_index = @vram[tile_map_addr]
       @lcdc[LCDC[:bg_window_tile_data_area]] == 0 ? to_signed_byte(tile_index) + 256 : tile_index
-    end
-
-    def get_pixel(tile_index, c, r)
-      @vram[tile_index + r][c] + (@vram[tile_index + r + 1][c] << 1)
     end
 
     def get_color(pallet, pixel)
