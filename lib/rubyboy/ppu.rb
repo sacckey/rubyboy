@@ -75,6 +75,7 @@ module Rubyboy
       @buffer = Array.new(144 * 160 * @channel_count, 0xff)
       @bg_pixels = Array.new(LCD_WIDTH, 0x00)
       @tile_cache = Array.new(384) { Array.new(64, 0) }
+      @tile_map_cache = Array.new(2048, 0)
     end
 
     def read_byte(addr)
@@ -113,12 +114,21 @@ module Rubyboy
       when 0x8000..0x9fff
         if @mode != MODE[:drawing]
           @vram[addr - 0x8000] = value
-          update_tile_cache(addr - 0x8000) if addr < 0x9800
+          if addr < 0x9800
+            update_tile_cache(addr - 0x8000)
+          else
+            update_tile_map_cache(addr - 0x8000)
+          end
         end
       when 0xfe00..0xfe9f
         @oam[addr - 0xfe00] = value if @mode != MODE[:oam_scan] && @mode != MODE[:drawing]
       when 0xff40
+        old_lcdc = @lcdc
         @lcdc = value
+
+        if old_lcdc[LCDC[:bg_window_tile_data_area]] != @lcdc[LCDC[:bg_window_tile_data_area]]
+          refresh_tile_map_cache
+        end
       when 0xff41
         @stat = value & 0x78
       when 0xff42
@@ -202,12 +212,12 @@ module Rubyboy
       return if @lcdc[LCDC[:bg_window_enable]] == 0
 
       y = (@ly + @scy) % 256
-      tile_map_addr = @lcdc[LCDC[:bg_tile_map_area]] == 0 ? 0x1800 : 0x1c00
-      tile_map_addr += (y / 8) * 32
+      tile_map_addr = (y / 8) * 32
+      tile_map_addr += 1024 if @lcdc[LCDC[:bg_tile_map_area]] == 1
       tile_y = y % 8 * 8
       LCD_WIDTH.times do |i|
         x = (i + @scx) % 256
-        tile_index = get_tile_index(tile_map_addr + (x / 8))
+        tile_index = @tile_map_cache[tile_map_addr + (x / 8)]
         pixel = @tile_cache[tile_index][tile_y + (x % 8)]
         color = get_color(@bgp, pixel)
         base = (@ly * LCD_WIDTH + i) * @channel_count
@@ -223,15 +233,15 @@ module Rubyboy
 
       rendered = false
       y = @wly
-      tile_map_addr = @lcdc[LCDC[:window_tile_map_area]] == 0 ? 0x1800 : 0x1c00
-      tile_map_addr += (y / 8) * 32
+      tile_map_addr = (y / 8) * 32
+      tile_map_addr += 1024 if @lcdc[LCDC[:window_tile_map_area]] == 1
       tile_y = y % 8 * 8
       LCD_WIDTH.times do |i|
         next if i < @wx - 7
 
         rendered = true
         x = i - (@wx - 7)
-        tile_index = get_tile_index(tile_map_addr + (x / 8))
+        tile_index = @tile_map_cache[tile_map_addr + (x / 8)]
         pixel = @tile_cache[tile_index][tile_y + (x % 8)]
         color = get_color(@bgp, pixel)
         base = (@ly * LCD_WIDTH + i) * @channel_count
@@ -307,9 +317,20 @@ module Rubyboy
       end
     end
 
-    def get_tile_index(tile_map_addr)
-      tile_index = @vram[tile_map_addr]
-      @lcdc[LCDC[:bg_window_tile_data_area]] == 0 ? to_signed_byte(tile_index) + 256 : tile_index
+    def update_tile_map_cache(addr)
+      map_index = addr - 0x1800
+      tile_index = @vram[addr]
+      @tile_map_cache[map_index] = @lcdc[LCDC[:bg_window_tile_data_area]] == 0 ?
+        to_signed_byte(tile_index) + 256 :
+        tile_index
+    end
+
+    def refresh_tile_map_cache
+      is_8800_mode = @lcdc[LCDC[:bg_window_tile_data_area]] == 0
+
+      (0x1800..0x1fff).each do |addr|
+        @tile_map_cache[addr - 0x1800] = is_8800_mode ? to_signed_byte(@vram[addr]) + 256 : @vram[addr]
+      end
     end
 
     def get_color(pallet, pixel)
