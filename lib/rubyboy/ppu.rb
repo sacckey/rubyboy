@@ -76,6 +76,9 @@ module Rubyboy
       @bg_pixels = Array.new(LCD_WIDTH, 0x00)
       @tile_cache = Array.new(384) { Array.new(64, 0) }
       @tile_map_cache = Array.new(2048, 0)
+      @bgp_cache = Array.new(4, 0xff)
+      @obp0_cache = Array.new(4, 0xff)
+      @obp1_cache = Array.new(4, 0xff)
     end
 
     def read_byte(addr)
@@ -141,10 +144,13 @@ module Rubyboy
         @lyc = value
       when 0xff47
         @bgp = value
+        refresh_palette_cache(@bgp_cache, value)
       when 0xff48
         @obp0 = value
+        refresh_palette_cache(@obp0_cache, value)
       when 0xff49
         @obp1 = value
+        refresh_palette_cache(@obp1_cache, value)
       when 0xff4a
         @wy = value
       when 0xff4b
@@ -219,7 +225,7 @@ module Rubyboy
         x = (i + @scx) % 256
         tile_index = @tile_map_cache[tile_map_addr + (x / 8)]
         pixel = @tile_cache[tile_index][tile_y + (x % 8)]
-        color = get_color(@bgp, pixel)
+        color = @bgp_cache[pixel]
         base = (@ly * LCD_WIDTH + i) * @channel_count
         @buffer[base] = color
         @buffer[base + 1] = color
@@ -243,7 +249,7 @@ module Rubyboy
         x = i - (@wx - 7)
         tile_index = @tile_map_cache[tile_map_addr + (x / 8)]
         pixel = @tile_cache[tile_index][tile_y + (x % 8)]
-        color = get_color(@bgp, pixel)
+        color = @bgp_cache[pixel]
         base = (@ly * LCD_WIDTH + i) * @channel_count
         @buffer[base] = color
         @buffer[base + 1] = color
@@ -273,7 +279,7 @@ module Rubyboy
 
       sprites.each do |sprite|
         flags = sprite[:flags]
-        pallet = flags[SPRITE_FLAGS[:dmg_palette]] == 0 ? @obp0 : @obp1
+        pallet = flags[SPRITE_FLAGS[:dmg_palette]] == 0 ? @obp0_cache : @obp1_cache
         tile_index = sprite[:tile_index]
         tile_index &= 0xfe if sprite_height == 16
         y = (@ly - sprite[:y]) % 256
@@ -290,7 +296,7 @@ module Rubyboy
           next if pixel == 0 || i >= LCD_WIDTH
           next if flags[SPRITE_FLAGS[:priority]] == 1 && @bg_pixels[i] != 0
 
-          color = get_color(pallet, pixel)
+          color = pallet[pixel]
           base = (@ly * LCD_WIDTH + i) * @channel_count
           @buffer[base] = color
           @buffer[base + 1] = color
@@ -330,6 +336,17 @@ module Rubyboy
 
       (0x1800..0x1fff).each do |addr|
         @tile_map_cache[addr - 0x1800] = is_8800_mode ? to_signed_byte(@vram[addr]) + 256 : @vram[addr]
+      end
+    end
+
+    def refresh_palette_cache(cache, palette_value)
+      4.times do |i|
+        case (palette_value >> (i * 2)) & 0b11
+        when 0 then cache[i] = 0xff
+        when 1 then cache[i] = 0xaa
+        when 2 then cache[i] = 0x55
+        when 3 then cache[i] = 0x00
+        end
       end
     end
 
