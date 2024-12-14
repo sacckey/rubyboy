@@ -79,6 +79,7 @@ module Rubyboy
       @bgp_cache = Array.new(4, 0xff)
       @obp0_cache = Array.new(4, 0xff)
       @obp1_cache = Array.new(4, 0xff)
+      @sprite_cache = Array.new(40) { { y: 0xff, x: 0xff, tile_index: 0, flags: 0 } }
     end
 
     def read_byte(addr)
@@ -124,7 +125,18 @@ module Rubyboy
           end
         end
       when 0xfe00..0xfe9f
-        @oam[addr - 0xfe00] = value if @mode != MODE[:oam_scan] && @mode != MODE[:drawing]
+        if @mode != MODE[:oam_scan] && @mode != MODE[:drawing]
+          @oam[addr - 0xfe00] = value
+          sprite_index = (addr - 0xfe00) >> 2
+          attribute = (addr - 0xfe00) & 3
+
+          case attribute
+          when 0 then @sprite_cache[sprite_index][:y] = (value - 16) & 0xff
+          when 1 then @sprite_cache[sprite_index][:x] = (value - 8) & 0xff
+          when 2 then @sprite_cache[sprite_index][:tile_index] = value
+          when 3 then @sprite_cache[sprite_index][:flags] = value
+          end
+        end
       when 0xff40
         old_lcdc = @lcdc
         @lcdc = value
@@ -266,12 +278,10 @@ module Rubyboy
       sprites = []
       cnt = 0
 
-      @oam.each_slice(4) do |y, x, tile_index, flags|
-        y = (y - 16) % 256
-        x = (x - 8) % 256
-        next if y > @ly || y + sprite_height <= @ly
+      @sprite_cache.each do |sprite|
+        next if sprite[:y] > @ly || sprite[:y] + sprite_height <= @ly
 
-        sprites << { y:, x:, tile_index:, flags: }
+        sprites << sprite
         cnt += 1
         break if cnt == 10
       end
