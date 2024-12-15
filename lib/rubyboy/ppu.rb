@@ -72,13 +72,13 @@ module Rubyboy
       @cycles = 0
       @interrupt = interrupt
       @channel_count = PIXEL_FORMATS[pixel_format]
-      @buffer = Array.new(144 * 160 * @channel_count, 0xff)
+      @buffer = Array.new(144 * 160, 0xffffffff)
       @bg_pixels = Array.new(LCD_WIDTH, 0x00)
       @tile_cache = Array.new(384) { Array.new(64, 0) }
       @tile_map_cache = Array.new(2048, 0)
-      @bgp_cache = Array.new(4, 0xff)
-      @obp0_cache = Array.new(4, 0xff)
-      @obp1_cache = Array.new(4, 0xff)
+      @bgp_cache = Array.new(4, 0xffffffff)
+      @obp0_cache = Array.new(4, 0xffffffff)
+      @obp1_cache = Array.new(4, 0xffffffff)
       @sprite_cache = Array.new(40) { { y: 0xff, x: 0xff, tile_index: 0, flags: 0 } }
     end
 
@@ -233,15 +233,12 @@ module Rubyboy
       tile_map_addr = (y / 8) * 32
       tile_map_addr += 1024 if @lcdc[LCDC[:bg_tile_map_area]] == 1
       tile_y = y % 8 * 8
+      buffer_start_index = @ly * LCD_WIDTH
       LCD_WIDTH.times do |i|
         x = (i + @scx) % 256
         tile_index = @tile_map_cache[tile_map_addr + (x / 8)]
         pixel = @tile_cache[tile_index][tile_y + (x % 8)]
-        color = @bgp_cache[pixel]
-        base = (@ly * LCD_WIDTH + i) * @channel_count
-        @buffer[base] = color
-        @buffer[base + 1] = color
-        @buffer[base + 2] = color
+        @buffer[buffer_start_index + i] = @bgp_cache[pixel]
         @bg_pixels[i] = pixel
       end
     end
@@ -254,6 +251,7 @@ module Rubyboy
       tile_map_addr = (y / 8) * 32
       tile_map_addr += 1024 if @lcdc[LCDC[:window_tile_map_area]] == 1
       tile_y = y % 8 * 8
+      buffer_start_index = @ly * LCD_WIDTH
       LCD_WIDTH.times do |i|
         next if i < @wx - 7
 
@@ -261,11 +259,7 @@ module Rubyboy
         x = i - (@wx - 7)
         tile_index = @tile_map_cache[tile_map_addr + (x / 8)]
         pixel = @tile_cache[tile_index][tile_y + (x % 8)]
-        color = @bgp_cache[pixel]
-        base = (@ly * LCD_WIDTH + i) * @channel_count
-        @buffer[base] = color
-        @buffer[base + 1] = color
-        @buffer[base + 2] = color
+        @buffer[buffer_start_index + i] = @bgp_cache[pixel]
         @bg_pixels[i] = pixel
       end
       @wly += 1 if rendered
@@ -296,6 +290,7 @@ module Rubyboy
         y = sprite_height - y - 1 if flags[SPRITE_FLAGS[:y_flip]] == 1
         tile_index = (tile_index + 1) % 256 if y >= 8
         tile_y = y % 8 * 8
+        buffer_start_index = @ly * LCD_WIDTH + sprite[:x]
 
         8.times do |x|
           x_flipped = flags[SPRITE_FLAGS[:x_flip]] == 1 ? 7 - x : x
@@ -306,11 +301,7 @@ module Rubyboy
           next if pixel == 0 || i >= LCD_WIDTH
           next if flags[SPRITE_FLAGS[:priority]] == 1 && @bg_pixels[i] != 0
 
-          color = pallet[pixel]
-          base = (@ly * LCD_WIDTH + i) * @channel_count
-          @buffer[base] = color
-          @buffer[base + 1] = color
-          @buffer[base + 2] = color
+          @buffer[buffer_start_index + x] = pallet[pixel]
         end
       end
     end
@@ -352,10 +343,10 @@ module Rubyboy
     def refresh_palette_cache(cache, palette_value)
       4.times do |i|
         case (palette_value >> (i * 2)) & 0b11
-        when 0 then cache[i] = 0xff
-        when 1 then cache[i] = 0xaa
-        when 2 then cache[i] = 0x55
-        when 3 then cache[i] = 0x00
+        when 0 then cache[i] = 0xffffffff
+        when 1 then cache[i] = 0xffaaaaaa
+        when 2 then cache[i] = 0xff555555
+        when 3 then cache[i] = 0xff000000
         end
       end
     end

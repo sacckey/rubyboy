@@ -11,7 +11,7 @@ module Rubyboy
     def initialize
       raise SDL.GetError() if SDL.InitSubSystem(SDL::INIT_VIDEO) != 0
 
-      @buffer = FFI::MemoryPointer.new(:uint8, SCREEN_WIDTH * SCREEN_HEIGHT * 3)
+      @buffer = FFI::MemoryPointer.new(:uint32, SCREEN_WIDTH * SCREEN_HEIGHT)
       @window = SDL.CreateWindow('Ruby Boy', 0, 0, SCREEN_WIDTH * SCALE, SCREEN_HEIGHT * SCALE, SDL::SDL_WINDOW_RESIZABLE)
 
       raise SDL.GetError() if @window.null?
@@ -19,13 +19,13 @@ module Rubyboy
       @renderer = SDL.CreateRenderer(@window, -1, 0)
       SDL.SetHint('SDL_HINT_RENDER_SCALE_QUALITY', '2')
       SDL.RenderSetLogicalSize(@renderer, SCREEN_WIDTH * SCALE, SCREEN_HEIGHT * SCALE)
-      @texture = SDL.CreateTexture(@renderer, SDL::PIXELFORMAT_RGB24, 1, SCREEN_WIDTH, SCREEN_HEIGHT)
+      @texture = SDL.CreateTexture(@renderer, SDL::PIXELFORMAT_ABGR8888, 1, SCREEN_WIDTH, SCREEN_HEIGHT)
       @event = FFI::MemoryPointer.new(:pointer)
     end
 
     def draw(framebuffer)
-      @buffer.write_array_of_uint8(framebuffer)
-      SDL.UpdateTexture(@texture, nil, @buffer, SCREEN_WIDTH * 3)
+      @buffer.write_array_of_uint32(framebuffer)
+      SDL.UpdateTexture(@texture, nil, @buffer, SCREEN_WIDTH * 4)
       SDL.RenderClear(@renderer)
       SDL.RenderCopy(@renderer, @texture, nil, nil)
       SDL.RenderPresent(@renderer)
