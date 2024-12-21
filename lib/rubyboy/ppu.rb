@@ -290,7 +290,7 @@ module Rubyboy
         y = sprite_height - y - 1 if flags[SPRITE_FLAGS[:y_flip]] == 1
         tile_index = (tile_index + 1) & 0xff if y >= 8
         tile_y = (y & 7) << 3
-        buffer_start_index = @ly * LCD_WIDTH + sprite[:x]
+        buffer_start_index = @ly * LCD_WIDTH
 
         8.times do |x|
           x_flipped = flags[SPRITE_FLAGS[:x_flip]] == 1 ? 7 - x : x
@@ -301,7 +301,7 @@ module Rubyboy
           next if pixel == 0 || i >= LCD_WIDTH
           next if flags[SPRITE_FLAGS[:priority]] == 1 && @bg_pixels[i] != 0
 
-          @buffer[buffer_start_index + x] = pallet[pixel]
+          @buffer[buffer_start_index + i] = pallet[pixel]
         end
       end
     end
