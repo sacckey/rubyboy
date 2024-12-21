@@ -234,12 +234,80 @@ module Rubyboy
       tile_map_addr += 1024 if @lcdc[LCDC[:bg_tile_map_area]] == 1
       tile_y = (y & 7) << 3
       buffer_start_index = @ly * LCD_WIDTH
-      LCD_WIDTH.times do |i|
-        x = (i + @scx) & 0xff
-        tile_index = @tile_map_cache[tile_map_addr + (x >> 3)]
-        pixel = @tile_cache[tile_index][tile_y + (x & 7)]
-        @buffer[buffer_start_index + i] = @bgp_cache[pixel]
-        @bg_pixels[i] = pixel
+
+      scx = @scx
+      buffer = @buffer
+      bg_pixels = @bg_pixels
+      tile_cache = @tile_cache
+      tile_map_cache = @tile_map_cache
+      bgp_cache = @bgp_cache
+
+      i = 0
+      current_tile = scx >> 3
+      x_offset = scx & 7
+
+      if x_offset > 0
+        tile = tile_cache[tile_map_cache[tile_map_addr + current_tile]]
+        while (x_offset + i) < 8
+          pixel = tile[tile_y + x_offset + i]
+          buffer[buffer_start_index + i] = bgp_cache[pixel]
+          bg_pixels[i] = pixel
+          i += 1
+        end
+        current_tile += 1
+      end
+
+      while i < LCD_WIDTH - 7
+        tile = tile_cache[tile_map_cache[tile_map_addr + (current_tile & 0x1f)]]
+        idx = buffer_start_index + i
+
+        # Unroll the 8-pixel loop
+        pixel = tile[tile_y]
+        buffer[idx] = bgp_cache[pixel]
+        bg_pixels[i] = pixel
+
+        pixel = tile[tile_y + 1]
+        buffer[idx + 1] = bgp_cache[pixel]
+        bg_pixels[i + 1] = pixel
+
+        pixel = tile[tile_y + 2]
+        buffer[idx + 2] = bgp_cache[pixel]
+        bg_pixels[i + 2] = pixel
+
+        pixel = tile[tile_y + 3]
+        buffer[idx + 3] = bgp_cache[pixel]
+        bg_pixels[i + 3] = pixel
+
+        pixel = tile[tile_y + 4]
+        buffer[idx + 4] = bgp_cache[pixel]
+        bg_pixels[i + 4] = pixel
+
+        pixel = tile[tile_y + 5]
+        buffer[idx + 5] = bgp_cache[pixel]
+        bg_pixels[i + 5] = pixel
+
+        pixel = tile[tile_y + 6]
+        buffer[idx + 6] = bgp_cache[pixel]
+        bg_pixels[i + 6] = pixel
+
+        pixel = tile[tile_y + 7]
+        buffer[idx + 7] = bgp_cache[pixel]
+        bg_pixels[i + 7] = pixel
+
+        i += 8
+        current_tile += 1
+      end
+
+      if i < LCD_WIDTH
+        tile = tile_cache[tile_map_cache[tile_map_addr + (current_tile & 0x1f)]]
+        x = 0
+        while i < LCD_WIDTH
+          pixel = tile[tile_y + x]
+          buffer[buffer_start_index + i] = bgp_cache[pixel]
+          bg_pixels[i] = pixel
+          x += 1
+          i += 1
+        end
       end
     end
 
