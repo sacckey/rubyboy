@@ -347,7 +347,8 @@ module Rubyboy
         cnt += 1
         break if cnt == 10
       end
-      sprites = sprites.sort_by.with_index { |sprite, i| [-sprite[:x], -i] }
+      sprites.reverse!
+      sprites.sort! { |a, b| b[:x] <=> a[:x] }
 
       sprites.each do |sprite|
         flags = sprite[:flags]
