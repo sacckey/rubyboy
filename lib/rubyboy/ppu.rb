@@ -141,9 +141,7 @@ module Rubyboy
         old_lcdc = @lcdc
         @lcdc = value
 
-        if old_lcdc[LCDC[:bg_window_tile_data_area]] != @lcdc[LCDC[:bg_window_tile_data_area]]
-          refresh_tile_map_cache
-        end
+        refresh_tile_map_cache if old_lcdc[LCDC[:bg_window_tile_data_area]] != @lcdc[LCDC[:bg_window_tile_data_area]]
       when 0xff41
         @stat = value & 0x78
       when 0xff42
@@ -298,16 +296,16 @@ module Rubyboy
         current_tile += 1
       end
 
-      if i < LCD_WIDTH
-        tile = tile_cache[tile_map_cache[tile_map_addr + (current_tile & 0x1f)]]
-        x = 0
-        while i < LCD_WIDTH
-          pixel = tile[tile_y + x]
-          buffer[buffer_start_index + i] = bgp_cache[pixel]
-          bg_pixels[i] = pixel
-          x += 1
-          i += 1
-        end
+      return unless i < LCD_WIDTH
+
+      tile = tile_cache[tile_map_cache[tile_map_addr + (current_tile & 0x1f)]]
+      x = 0
+      while i < LCD_WIDTH
+        pixel = tile[tile_y + x]
+        buffer[buffer_start_index + i] = bgp_cache[pixel]
+        bg_pixels[i] = pixel
+        x += 1
+        i += 1
       end
     end
 
@@ -396,9 +394,7 @@ module Rubyboy
     def update_tile_map_cache(addr)
       map_index = addr - 0x1800
       tile_index = @vram[addr]
-      @tile_map_cache[map_index] = @lcdc[LCDC[:bg_window_tile_data_area]] == 0 ?
-        to_signed_byte(tile_index) + 256 :
-        tile_index
+      @tile_map_cache[map_index] = @lcdc[LCDC[:bg_window_tile_data_area]] == 0 ? to_signed_byte(tile_index) + 256 : tile_index
     end
 
     def refresh_tile_map_cache
