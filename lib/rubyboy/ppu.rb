@@ -4,11 +4,6 @@ module Rubyboy
   class Ppu
     attr_reader :buffer
 
-    PIXEL_FORMATS = {
-      rgb: 3,
-      rgba: 4
-    }.freeze
-
     MODE = {
       hblank: 0,
       vblank: 1,
@@ -51,9 +46,7 @@ module Rubyboy
     HBLANK_CYCLES = 204
     ONE_LINE_CYCLES = OAM_SCAN_CYCLES + DRAWING_CYCLES + HBLANK_CYCLES
 
-    def initialize(interrupt, pixel_format = :rgb)
-      raise ArgumentError, 'Invalid pixel format' unless PIXEL_FORMATS.key?(pixel_format)
-
+    def initialize(interrupt)
       @mode = MODE[:oam_scan]
       @lcdc = 0x91
       @stat = 0x00
@@ -71,7 +64,6 @@ module Rubyboy
       @wly = 0x00
       @cycles = 0
       @interrupt = interrupt
-      @channel_count = PIXEL_FORMATS[pixel_format]
       @buffer = Array.new(144 * 160, 0xffffffff)
       @bg_pixels = Array.new(LCD_WIDTH, 0x00)
       @tile_cache = Array.new(384) { Array.new(64, 0) }
@@ -377,9 +369,7 @@ module Rubyboy
 
     def update_tile_cache(addr)
       tile_index = addr >> 4
-
-      row = (addr & 0xf) >> 1
-      return if row >= 8
+      row = ((addr & 0xf) >> 1) << 3
 
       byte1 = @vram[addr & ~1]
       byte2 = @vram[addr | 1]
@@ -387,7 +377,7 @@ module Rubyboy
       8.times do |col|
         bit_index = 7 - col
         pixel = ((byte1 >> bit_index) & 1) | (((byte2 >> bit_index) & 1) << 1)
-        @tile_cache[tile_index][(row << 3) + col] = pixel
+        @tile_cache[tile_index][row + col] = pixel
       end
     end
 
@@ -413,15 +403,6 @@ module Rubyboy
         when 2 then cache[i] = 0xff555555
         when 3 then cache[i] = 0xff000000
         end
-      end
-    end
-
-    def get_color(pallet, pixel)
-      case (pallet >> (pixel << 1)) & 0b11
-      when 0 then 0xff
-      when 1 then 0xaa
-      when 2 then 0x55
-      when 3 then 0x00
       end
     end
 

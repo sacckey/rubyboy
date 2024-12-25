@@ -22,7 +22,7 @@ module Rubyboy
       ram = Ram.new
       mbc = Cartridge::Factory.create(rom, ram)
       interrupt = Interrupt.new
-      @ppu = Ppu.new(interrupt, :rgba)
+      @ppu = Ppu.new(interrupt)
       @timer = Timer.new(interrupt)
       @joypad = Joypad.new(interrupt)
       @apu = Apu.new
