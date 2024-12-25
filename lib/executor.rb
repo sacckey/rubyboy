@@ -14,7 +14,7 @@ class Executor
   end
 
   def exec(direction_key = 0b1111, action_key = 0b1111)
-    bin = @emulator.step(direction_key, action_key).pack('C*')
+    bin = @emulator.step(direction_key, action_key).pack('V*')
     File.binwrite(File.join('/RUBYBOY_TMP', 'video.data'), bin)
   end
 

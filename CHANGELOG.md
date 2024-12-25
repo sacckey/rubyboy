@@ -1,5 +1,9 @@
 ## [Unreleased]
 
+## [1.4.1] - 2024-12-25
+
+- PPU performance optimization through data caching and pixel format changes
+
 ## [1.4.0] - 2024-09-29
 
 - Works on browser using ruby.wasm

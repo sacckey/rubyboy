@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
-require_relative 'apu_wasm'
+require_relative 'apu'
 require_relative 'bus'
 require_relative 'cpu'
 require_relative 'emulator'
-require_relative 'ppu_wasm'
+require_relative 'ppu'
 require_relative 'rom'
 require_relative 'ram'
 require_relative 'timer'
@@ -22,10 +22,10 @@ module Rubyboy
       ram = Ram.new
       mbc = Cartridge::Factory.create(rom, ram)
       interrupt = Interrupt.new
-      @ppu = PpuWasm.new(interrupt)
+      @ppu = Ppu.new(interrupt)
       @timer = Timer.new(interrupt)
       @joypad = Joypad.new(interrupt)
-      @apu = ApuWasm.new
+      @apu = Apu.new
       @bus = Bus.new(@ppu, rom, ram, mbc, @timer, interrupt, @joypad, @apu)
       @cpu = Cpu.new(@bus, interrupt)
     end
