@@ -133,7 +133,7 @@ module Rubyboy
         old_lcdc = @lcdc
         @lcdc = value
 
-        refresh_tile_map_cache if old_lcdc[LCDC[:bg_window_tile_data_area]] != @lcdc[LCDC[:bg_window_tile_data_area]]
+        refresh_tile_map_cache if old_lcdc[LCDC[:bg_window_tile_data_area]] != value[LCDC[:bg_window_tile_data_area]]
       when 0xff41
         @stat = value & 0x78
       when 0xff42
@@ -388,10 +388,14 @@ module Rubyboy
     end
 
     def refresh_tile_map_cache
-      is_8800_mode = @lcdc[LCDC[:bg_window_tile_data_area]] == 0
-
-      (0x1800..0x1fff).each do |addr|
-        @tile_map_cache[addr - 0x1800] = is_8800_mode ? to_signed_byte(@vram[addr]) + 256 : @vram[addr]
+      if @lcdc[LCDC[:bg_window_tile_data_area]] == 0
+        (0x1800..0x1fff).each do |addr|
+          @tile_map_cache[addr - 0x1800] = to_signed_byte(@vram[addr]) + 256
+        end
+      else
+        (0x1800..0x1fff).each do |addr|
+          @tile_map_cache[addr - 0x1800] = @vram[addr]
+        end
       end
     end
 
