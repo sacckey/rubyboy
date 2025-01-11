@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    rubyboy (1.4.1)
+    rubyboy (1.4.2)
       ffi (~> 1.16, >= 1.16.3)
 
 GEM
