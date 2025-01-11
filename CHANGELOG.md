@@ -1,5 +1,10 @@
 ## [Unreleased]
 
+## [1.4.2] - 2025-01-11
+
+- Use DefaultRubyVM
+- Bump ruby.wasm version to 2.7.0
+
 ## [1.4.1] - 2024-12-25
 
 - PPU performance optimization through data caching and pixel format changes

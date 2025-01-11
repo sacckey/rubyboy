@@ -15,11 +15,11 @@ class Executor
 
   def exec(direction_key = 0b1111, action_key = 0b1111)
     bin = @emulator.step(direction_key, action_key).pack('V*')
-    File.binwrite(File.join('/RUBYBOY_TMP', 'video.data'), bin)
+    File.binwrite('/video.data', bin)
   end
 
   def read_rom_from_virtual_fs
-    rom_path = '/RUBYBOY_TMP/rom.data'
+    rom_path = '/rom.data'
     raise "ROM file not found in virtual filesystem at #{rom_path}" unless File.exist?(rom_path)
 
     rom_data = File.open(rom_path, 'rb') { |file| file.read.bytes }
