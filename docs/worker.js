@@ -1,5 +1,5 @@
-import { RubyVM } from 'https://cdn.jsdelivr.net/npm/@ruby/wasm-wasi@2.6.2/+esm';
-import { Directory, File, OpenDirectory, OpenFile, PreopenDirectory, WASI } from 'https://cdn.jsdelivr.net/npm/@bjorn3/browser_wasi_shim@0.3.0/+esm';
+import { DefaultRubyVM } from 'https://cdn.jsdelivr.net/npm/@ruby/wasm-wasi@2.6.2/dist/browser/+esm';
+import { File } from 'https://cdn.jsdelivr.net/npm/@bjorn3/browser_wasi_shim@0.3.0/+esm';
 
 const DIRECTION_KEY_MASKS = {
   'KeyD': 0b0001, // Right
@@ -19,20 +19,6 @@ class Rubyboy {
   constructor() {
     this.wasmUrl = 'https://proxy.sacckey.dev/rubyboy.wasm';
 
-    const rootContents = new Map();
-    rootContents.set('RUBYBOY_TMP', new Directory(new Map()));
-    this.rootFs = rootContents;
-
-    const args = ['ruby.wasm', '-e_=0'];
-    this.wasi = new WASI(args, [], [
-      new OpenFile(new File([])), // stdin
-      new OpenFile(new File([])), // stdout
-      new OpenFile(new File([])), // stderr
-      new PreopenDirectory('/', rootContents)
-    ], {
-      debug: false
-    });
-
     this.directionKey = 0b1111;
     this.actionKey = 0b1111;
   }
@@ -43,18 +29,8 @@ class Rubyboy {
       response = await fetch(this.wasmUrl);
     }
 
-    const buffer = await response.arrayBuffer();
-    const imports = {
-      wasi_snapshot_preview1: this.wasi.wasiImport,
-    };
-    const vm = new RubyVM();
-    vm.addToImports(imports);
-
-    const { instance } = await WebAssembly.instantiate(buffer, imports);
-    await vm.setInstance(instance);
-    this.wasi.initialize(instance);
-    vm.initialize();
-
+    const module = await WebAssembly.compileStreaming(response)
+    const { vm, wasi } = await DefaultRubyVM(module);
     vm.eval(`
       require 'js'
       require_relative 'lib/executor'
@@ -63,15 +39,13 @@ class Rubyboy {
     `);
 
     this.vm = vm;
+    this.rootDir = wasi.fds[3].dir
   }
 
   sendPixelData() {
     this.vm.eval(`$executor.exec(${this.directionKey}, ${this.actionKey})`);
 
-    const tmpDir = this.rootFs.get('RUBYBOY_TMP');
-    const op = new OpenDirectory(tmpDir);
-    const result = op.path_lookup('video.data', 0);
-    const file = result.inode_obj;
+    const file = this.rootDir.contents.get('video.data');
     const bytes = file.data;
 
     postMessage({ type: 'pixelData', data: bytes.buffer }, [bytes.buffer]);
@@ -127,8 +101,7 @@ self.addEventListener('message', async (event) => {
 
   if (event.data.type === 'loadROM') {
     const romFile = new File(new Uint8Array(event.data.data));
-    const tmpDir = rubyboy.rootFs.get('RUBYBOY_TMP');
-    tmpDir.contents.set('rom.data', romFile);
+    rubyboy.rootDir.contents.set('rom.data', romFile);
     rubyboy.vm.eval(`
       $executor.read_rom_from_virtual_fs
     `);
