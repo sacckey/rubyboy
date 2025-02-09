@@ -3,7 +3,7 @@
 
 case ARGV[0]
 when 'build'
-  command = %w[build --ruby-version 3.3 -o ./docs/ruby-js.wasm]
+  command = %w[build --ruby-version 3.4 -o ./docs/ruby-js.wasm]
 when 'pack'
   command = %w[pack ./docs/ruby-js.wasm --dir ./lib::/lib -o ./docs/rubyboy.wasm]
 else
