@@ -1,4 +1,7 @@
-## [Unreleased]
+## [1.5.0] - 2025-02-09
+
+- Add EmulatorHeadless and use it for bench
+- Bump ruby.wasm version to 2.7.1
 
 ## [1.4.2] - 2025-01-11
 

@@ -40,4 +40,4 @@ else
   puts 'YJIT is not available in this environment.'
 end
 
-Rubyboy::Bench.new.bench(**options)
+Rubyboy::Bench.new.run(**options)
