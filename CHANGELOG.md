@@ -1,3 +1,7 @@
+## [1.5.1] - 2025-02-16
+
+- Optimize Cartridge::Mbc1 and Bus
+
 ## [1.5.0] - 2025-02-09
 
 - Add EmulatorHeadless and use it for bench
