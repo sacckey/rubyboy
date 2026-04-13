@@ -19,15 +19,9 @@ module Rubyboy
         when 0x4, 0x5, 0x6, 0x7
           @rom.data[addr + ((@rom_bank - 1) << 14)]
         when 0xa, 0xb
-          if @ram_enable
-            if @ram_banking_mode
-              @ram.eram[addr - 0xa000 + (@ram_bank << 11)]
-            else
-              @ram.eram[addr - 0xa000]
-            end
-          else
-            0xff
-          end
+          return 0xff unless @ram_enable
+
+          @ram.eram[ram_offset(addr)] || 0xff
         end
       end
 
@@ -43,14 +37,18 @@ module Rubyboy
         when 0x6, 0x7
           @ram_banking_mode = value & 0x01 == 0x01
         when 0xa, 0xb
-          if @ram_enable
-            if @ram_banking_mode
-              @ram.eram[addr - 0xa000 + (@ram_bank << 11)] = value
-            else
-              @ram.eram[addr - 0xa000] = value
-            end
-          end
+          return unless @ram_enable
+
+          offset = ram_offset(addr)
+          @ram.eram[offset] = value if offset < @ram.eram.size
         end
+      end
+
+      private
+
+      def ram_offset(addr)
+        bank = @ram_banking_mode ? @ram_bank : 0
+        (addr - 0xa000) + (bank << 13)
       end
     end
   end
