@@ -13,6 +13,40 @@ RSpec.describe Rubyboy::Cartridge::Mbc1 do
   end
   let(:mbc) { described_class.new(rom, ram) }
 
+  describe 'ROM address windows' do
+    let(:rom_data) { Array.new(128 * 0x4000) { |i| i / 0x4000 } }
+
+    it 'maps the lower window to bank 0 in default ROM banking mode' do
+      mbc.write_byte(0x4000, 0x02)
+      expect(mbc.read_byte(0x0000)).to eq(0)
+    end
+
+    it 'maps the upper window using high bits and the selected low bank' do
+      mbc.write_byte(0x2000, 0x03)
+      mbc.write_byte(0x4000, 0x02)
+      expect(mbc.read_byte(0x4000)).to eq(0x43)
+    end
+
+    it 'maps low bank 0 to bank 1 within the selected high-bit group' do
+      mbc.write_byte(0x2000, 0x00)
+      mbc.write_byte(0x4000, 0x01)
+      expect(mbc.read_byte(0x4000)).to eq(0x21)
+    end
+
+    it 'maps the lower window using high bits in RAM banking mode' do
+      mbc.write_byte(0x4000, 0x02)
+      mbc.write_byte(0x6000, 0x01)
+      expect(mbc.read_byte(0x0000)).to eq(0x40)
+    end
+
+    it 'keeps high bits active for the upper window in RAM banking mode' do
+      mbc.write_byte(0x2000, 0x04)
+      mbc.write_byte(0x4000, 0x03)
+      mbc.write_byte(0x6000, 0x01)
+      expect(mbc.read_byte(0x4000)).to eq(0x64)
+    end
+  end
+
   describe 'RAM enable gate' do
     it 'reads 0xff from SRAM while RAM is disabled' do
       expect(mbc.read_byte(0xa000)).to eq(0xff)

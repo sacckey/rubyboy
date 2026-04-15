@@ -3,6 +3,9 @@
 module Rubyboy
   module Cartridge
     class Mbc1
+      ROM_BANK_SIZE = 0x4000
+      RAM_BANK_SIZE = 0x2000
+
       def initialize(rom, ram)
         @rom = rom
         @ram = ram
@@ -15,9 +18,9 @@ module Rubyboy
       def read_byte(addr)
         case (addr >> 12)
         when 0x0, 0x1, 0x2, 0x3
-          @rom.data[addr]
+          @rom.data[rom_offset(addr)] || 0xff
         when 0x4, 0x5, 0x6, 0x7
-          @rom.data[addr + ((@rom_bank - 1) << 14)]
+          @rom.data[rom_offset(addr)] || 0xff
         when 0xa, 0xb
           return 0xff unless @ram_enable
 
@@ -46,9 +49,20 @@ module Rubyboy
 
       private
 
+      def rom_offset(addr)
+        bank =
+          if addr < ROM_BANK_SIZE
+            @ram_banking_mode ? (@ram_bank << 5) : 0
+          else
+            (@ram_bank << 5) | @rom_bank
+          end
+
+        ((bank * ROM_BANK_SIZE) + (addr & (ROM_BANK_SIZE - 1))) % @rom.data.size
+      end
+
       def ram_offset(addr)
         bank = @ram_banking_mode ? @ram_bank : 0
-        (addr - 0xa000) + (bank << 13)
+        (addr - 0xa000) + (bank * RAM_BANK_SIZE)
       end
     end
   end
