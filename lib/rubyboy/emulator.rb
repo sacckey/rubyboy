@@ -8,17 +8,19 @@ module Rubyboy
     def initialize(rom_path)
       rom_data = File.open(rom_path, 'r') { _1.read.bytes }
       rom = Rom.new(rom_data)
-      ram = Ram.new(rom)
-      mbc = Cartridge::Factory.create(rom, ram)
+      @ram = Ram.new(rom)
+      mbc = Cartridge::Factory.create(rom, @ram)
       interrupt = Interrupt.new
       @ppu = Ppu.new(interrupt)
       @timer = Timer.new(interrupt)
       @joypad = Joypad.new(interrupt)
       @apu = Apu.new
-      @bus = Bus.new(@ppu, rom, ram, mbc, @timer, interrupt, @joypad, @apu)
+      @bus = Bus.new(@ppu, rom, @ram, mbc, @timer, interrupt, @joypad, @apu)
       @cpu = Cpu.new(@bus, interrupt)
       @lcd = Lcd.new
       @audio = Audio.new
+      @save_file = rom.battery? ? SaveFile.new(default_save_path(rom_path)) : nil
+      load_save_file
     end
 
     def start
@@ -47,6 +49,8 @@ module Rubyboy
     rescue StandardError => e
       puts e.to_s[0, 100]
       raise e
+    ensure
+      save_save_file
     end
 
     def bench(frames)
@@ -66,6 +70,28 @@ module Rubyboy
     end
 
     private
+
+    def default_save_path(rom_path)
+      dir = File.dirname(rom_path)
+      base = File.basename(rom_path, '.*')
+      File.join(dir, "#{base}.sav")
+    end
+
+    def load_save_file
+      return unless @save_file
+
+      bytes = @save_file.read(@ram.eram.size)
+      return unless bytes
+
+      @ram.eram.replace(bytes)
+      puts "Loaded save from #{@save_file.path}"
+    end
+
+    def save_save_file
+      return unless @save_file
+
+      puts "Saved to #{@save_file.path}" if @save_file.write(@ram.eram)
+    end
 
     def key_input_check
       SDL.PumpEvents

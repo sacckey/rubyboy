@@ -28,4 +28,18 @@ RSpec.describe Rubyboy::Rom do
       expect(build_rom(ram_size: 0x7f).ram_size_bytes).to eq(0)
     end
   end
+
+  describe '#battery?' do
+    [0x03, 0x06, 0x09, 0x0d, 0x0f, 0x10, 0x13, 0x1b, 0x1e, 0x22, 0xff].each do |type|
+      it "returns true for cartridge type 0x#{format('%02x', type)}" do
+        expect(build_rom(cartridge_type: type).battery?).to be true
+      end
+    end
+
+    [0x00, 0x01, 0x02, 0x05, 0x08, 0x11, 0x12, 0x19, 0x1a].each do |type|
+      it "returns false for cartridge type 0x#{format('%02x', type)}" do
+        expect(build_rom(cartridge_type: type).battery?).to be false
+      end
+    end
+  end
 end

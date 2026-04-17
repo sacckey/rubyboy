@@ -19,6 +19,8 @@ module Rubyboy
       0x05 => 64 * 1024
     }.freeze
 
+    BATTERY_CARTRIDGE_TYPES = [0x03, 0x06, 0x09, 0x0d, 0x0f, 0x10, 0x13, 0x1b, 0x1e, 0x22, 0xff].freeze
+
     def initialize(data)
       @data = data
       load_data
@@ -26,6 +28,10 @@ module Rubyboy
 
     def ram_size_bytes
       RAM_SIZE_BYTES.fetch(@ram_size, 0)
+    end
+
+    def battery?
+      BATTERY_CARTRIDGE_TYPES.include?(@cartridge_type)
     end
 
     private
