@@ -22,9 +22,13 @@ module Rubyboy
     end
 
     def queue(buffer)
-      # sleep(0.001) while SDL.GetQueuedAudioSize(@device) > 8192
-
-      SDL.ClearQueuedAudio(@device) if SDL.GetQueuedAudioSize(@device) > 8192
+      # Block until the SDL audio queue has drained enough to accept another
+      # buffer. The previous implementation called SDL.ClearQueuedAudio here
+      # instead, which dropped the entire queue whenever the emulator ran ahead
+      # of real time — that produced audible pops/gaps in BGM (most noticeable
+      # in Pokemon-style tracks). Blocking here costs a tiny bit of frame
+      # budget but keeps audio continuous.
+      sleep(0.001) while SDL.GetQueuedAudioSize(@device) > 8192
 
       buf_ptr = FFI::MemoryPointer.new(:float, buffer.size)
       buf_ptr.put_array_of_float(0, buffer)

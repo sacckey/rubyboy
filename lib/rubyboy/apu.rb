@@ -7,13 +7,24 @@ require_relative 'apu_channels/channel4'
 
 module Rubyboy
   class Apu
+    # APU samples are pushed to SDL at 48 kHz (must match Rubyboy::Audio::SAMPLE_RATE).
+    # The CPU runs at 4_194_304 Hz, so the real divisor is 87.3813...
+    # The previous implementation used `>= 87` which effectively ran the sampler
+    # at ~48_210 Hz — a 0.4% drift that slowly over-filled the SDL audio queue
+    # and triggered the clear-on-overflow in Audio#queue, producing audible gaps
+    # in BGM. We fix this with a fixed-point accumulator that targets the exact
+    # ratio: every step adds `cycles * SAMPLE_RATE` and we emit one sample
+    # whenever the accumulator reaches CPU_CLOCK_HZ.
+    CPU_CLOCK_HZ = 4_194_304
+    SAMPLE_RATE = 48_000
+
     attr_reader :samples
 
     def initialize
       @nr50 = 0
       @nr51 = 0
       @cycles = 0
-      @sampling_cycles = 0
+      @sampling_accumulator = 0
       @fs = 0
       @samples = Array.new(1024, 0.0)
       @sample_idx = 0
@@ -25,7 +36,7 @@ module Rubyboy
 
     def step(cycles)
       @cycles += cycles
-      @sampling_cycles += cycles
+      @sampling_accumulator += cycles * SAMPLE_RATE
 
       @channel1.step(cycles)
       @channel2.step(cycles)
@@ -43,8 +54,8 @@ module Rubyboy
         @fs = (@fs + 1) % 8
       end
 
-      if @sampling_cycles >= 87
-        @sampling_cycles -= 87
+      if @sampling_accumulator >= CPU_CLOCK_HZ
+        @sampling_accumulator -= CPU_CLOCK_HZ
 
         left_sample = (
           @nr51[7] * @channel4.dac_output +
