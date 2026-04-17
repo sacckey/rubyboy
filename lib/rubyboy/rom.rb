@@ -10,9 +10,22 @@ module Rubyboy
       BB BB 67 63 6E 0E EC CC DD DC 99 9F BB B9 33 3E
     ].map(&:hex).freeze
 
+    RAM_SIZE_BYTES = {
+      0x00 => 0,
+      0x01 => 2 * 1024,
+      0x02 => 8 * 1024,
+      0x03 => 32 * 1024,
+      0x04 => 128 * 1024,
+      0x05 => 64 * 1024
+    }.freeze
+
     def initialize(data)
       @data = data
       load_data
+    end
+
+    def ram_size_bytes
+      RAM_SIZE_BYTES.fetch(@ram_size, 0)
     end
 
     private

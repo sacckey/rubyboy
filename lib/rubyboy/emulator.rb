@@ -8,7 +8,7 @@ module Rubyboy
     def initialize(rom_path)
       rom_data = File.open(rom_path, 'r') { _1.read.bytes }
       rom = Rom.new(rom_data)
-      ram = Ram.new
+      ram = Ram.new(rom)
       mbc = Cartridge::Factory.create(rom, ram)
       interrupt = Interrupt.new
       @ppu = Ppu.new(interrupt)
