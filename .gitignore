@@ -10,6 +10,8 @@
 /rubies/
 
 *.wasm
+*.sav
+*.sav.tmp
 
 # rspec failure tracking
 .rspec_status
