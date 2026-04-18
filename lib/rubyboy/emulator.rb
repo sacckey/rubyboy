@@ -4,22 +4,36 @@ module Rubyboy
   class Emulator
     CPU_CLOCK_HZ = 4_194_304
     CYCLE_NANOSEC = 1_000_000_000 / CPU_CLOCK_HZ
+    SAVE_STATE_KEYS = [
+      SDL::SDL_SCANCODE_1,
+      SDL::SDL_SCANCODE_2,
+      SDL::SDL_SCANCODE_3,
+      SDL::SDL_SCANCODE_4,
+      SDL::SDL_SCANCODE_5,
+      SDL::SDL_SCANCODE_6,
+      SDL::SDL_SCANCODE_7,
+      SDL::SDL_SCANCODE_8,
+      SDL::SDL_SCANCODE_9,
+      SDL::SDL_SCANCODE_0
+    ].freeze
 
     def initialize(rom_path)
+      @rom_path = rom_path
       rom_data = File.open(rom_path, 'r') { _1.read.bytes }
-      rom = Rom.new(rom_data)
-      @ram = Ram.new(rom)
-      mbc = Cartridge::Factory.create(rom, @ram)
-      interrupt = Interrupt.new
-      @ppu = Ppu.new(interrupt)
-      @timer = Timer.new(interrupt)
-      @joypad = Joypad.new(interrupt)
+      @rom = Rom.new(rom_data)
+      @ram = Ram.new(@rom)
+      @mbc = Cartridge::Factory.create(@rom, @ram)
+      @interrupt = Interrupt.new
+      @ppu = Ppu.new(@interrupt)
+      @timer = Timer.new(@interrupt)
+      @joypad = Joypad.new(@interrupt)
       @apu = Apu.new
-      @bus = Bus.new(@ppu, rom, @ram, mbc, @timer, interrupt, @joypad, @apu)
-      @cpu = Cpu.new(@bus, interrupt)
+      @bus = Bus.new(@ppu, @rom, @ram, @mbc, @timer, @interrupt, @joypad, @apu)
+      @cpu = Cpu.new(@bus, @interrupt)
       @lcd = Lcd.new
       @audio = Audio.new
-      @save_file = rom.battery? ? SaveFile.new(default_save_path(rom_path)) : nil
+      @prev_save_state_keys = Array.new(SAVE_STATE_KEYS.size, 0)
+      @save_file = @rom.battery? ? SaveFile.new(default_save_path(rom_path)) : nil
       load_save_file
     end
 
@@ -69,12 +83,64 @@ module Rubyboy
       Process.clock_gettime(Process::CLOCK_MONOTONIC, :nanosecond) - start_time
     end
 
+    def save_state(slot: nil, path: nil)
+      state_path = path || slot_path(slot)
+      return false unless StateFile.write(state_path, rom: @rom) { hardware_state }
+
+      puts "Saved state to #{state_path}"
+      true
+    end
+
+    def load_state(slot: nil, path: nil)
+      state_path = path || slot_path(slot)
+      return false unless StateFile.read(state_path, rom: @rom) { |state| restore_hardware_state(state) }
+
+      puts "Loaded state from #{state_path}"
+      true
+    end
+
     private
 
     def default_save_path(rom_path)
       dir = File.dirname(rom_path)
       base = File.basename(rom_path, '.*')
       File.join(dir, "#{base}.sav")
+    end
+
+    def slot_path(slot)
+      raise ArgumentError, 'slot must be between 0 and 9' unless (0..9).cover?(slot)
+
+      dir = File.dirname(@rom_path)
+      base = File.basename(@rom_path, '.*')
+      File.join(dir, "#{base}.state#{slot}")
+    end
+
+    def hardware_state
+      {
+        schema: 'game_boy_console_and_cartridge',
+        console: {
+          cpu: @cpu.hardware_state,
+          ram: @ram.hardware_state,
+          ppu: @ppu.hardware_state,
+          apu: @apu.hardware_state,
+          timer: @timer.hardware_state,
+          interrupt: @interrupt.hardware_state,
+          joypad: @joypad.hardware_state
+        },
+        cartridge: @mbc.hardware_state
+      }
+    end
+
+    def restore_hardware_state(state)
+      console = state.fetch(:console)
+      @cpu.restore_hardware_state(console.fetch(:cpu))
+      @ram.restore_hardware_state(console.fetch(:ram))
+      @ppu.restore_hardware_state(console.fetch(:ppu))
+      @apu.restore_hardware_state(console.fetch(:apu))
+      @timer.restore_hardware_state(console.fetch(:timer))
+      @interrupt.restore_hardware_state(console.fetch(:interrupt))
+      @joypad.restore_hardware_state(console.fetch(:joypad))
+      @mbc.restore_hardware_state(state.fetch(:cartridge))
     end
 
     def load_save_file
@@ -98,10 +164,23 @@ module Rubyboy
       keyboard = SDL.GetKeyboardState(nil)
       keyboard_state = keyboard.read_array_of_uint8(229)
 
+      check_state_save_keys(keyboard_state)
       direction = (keyboard_state[SDL::SDL_SCANCODE_D]) | (keyboard_state[SDL::SDL_SCANCODE_A] << 1) | (keyboard_state[SDL::SDL_SCANCODE_W] << 2) | (keyboard_state[SDL::SDL_SCANCODE_S] << 3)
       action = (keyboard_state[SDL::SDL_SCANCODE_K]) | (keyboard_state[SDL::SDL_SCANCODE_J] << 1) | (keyboard_state[SDL::SDL_SCANCODE_U] << 2) | (keyboard_state[SDL::SDL_SCANCODE_I] << 3)
       @joypad.direction_button(15 - direction)
       @joypad.action_button(15 - action)
+    end
+
+    def check_state_save_keys(keyboard_state)
+      shift = keyboard_state[SDL::SDL_SCANCODE_LSHIFT] > 0
+      SAVE_STATE_KEYS.each_with_index do |key, index|
+        pressed = keyboard_state[key]
+        next unless pressed > 0 && @prev_save_state_keys[index] == 0
+
+        shift ? load_state(slot: index) : save_state(slot: index)
+      ensure
+        @prev_save_state_keys[index] = pressed
+      end
     end
   end
 end
