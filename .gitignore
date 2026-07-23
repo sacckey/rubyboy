@@ -12,6 +12,8 @@
 *.wasm
 *.sav
 *.sav.tmp
+*.state[0-9]
+*.state[0-9].tmp
 
 # rspec failure tracking
 .rspec_status

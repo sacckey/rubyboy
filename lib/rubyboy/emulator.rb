@@ -95,6 +95,7 @@ module Rubyboy
       state_path = path || slot_path(slot)
       return false unless StateFile.read(state_path, rom: @rom) { |state| restore_hardware_state(state) }
 
+      @audio.clear_queue
       puts "Loaded state from #{state_path}"
       true
     end
@@ -177,7 +178,8 @@ module Rubyboy
         pressed = keyboard_state[key]
         next unless pressed > 0 && @prev_save_state_keys[index] == 0
 
-        shift ? load_state(slot: index) : save_state(slot: index)
+        slot = index == 9 ? 0 : index + 1
+        shift ? load_state(slot:) : save_state(slot:)
       ensure
         @prev_save_state_keys[index] = pressed
       end

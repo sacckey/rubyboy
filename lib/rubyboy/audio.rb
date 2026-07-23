@@ -35,5 +35,9 @@ module Rubyboy
 
       SDL.QueueAudio(@device, buf_ptr, buffer.size * buf_ptr.type_size)
     end
+
+    def clear_queue
+      SDL.ClearQueuedAudio(@device)
+    end
   end
 end
