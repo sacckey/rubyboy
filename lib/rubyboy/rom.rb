@@ -34,6 +34,10 @@ module Rubyboy
       BATTERY_CARTRIDGE_TYPES.include?(@cartridge_type)
     end
 
+    def global_checksum_value
+      (@global_checksum[0] << 8) | @global_checksum[1]
+    end
+
     private
 
     def load_data
