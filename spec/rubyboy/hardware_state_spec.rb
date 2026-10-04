@@ -52,4 +52,82 @@ RSpec.describe 'hardware state snapshots' do
     expect(restored.instance_variable_get(:@sprite_cache)[0][:y]).to eq(0x12)
     expect(restored.buffer).to eq(Array.new(144 * 160, 0xffffffff))
   end
+
+  describe 'APU channel snapshots' do
+    shared_examples 'a compatible channel snapshot' do |channel_class, fields|
+      it 'preserves the saved field set and restores non-default values' do
+        channel = channel_class.new
+        expected = fields.each_with_index.to_h do |field, index|
+          initial = channel.instance_variable_get("@#{field}")
+          value = case initial
+                  when true, false then !initial
+                  when Array then initial.each_index.map { |i| (i * 17) & 0xff }
+                  else index + 1
+                  end
+          channel.instance_variable_set("@#{field}", value)
+          [field, value]
+        end
+
+        state = channel.hardware_state
+
+        expect(state.keys).to match_array(fields)
+        expect(state).to eq(expected)
+
+        restored = channel_class.new
+        restored.restore_hardware_state(state)
+
+        expected.each do |field, value|
+          expect(restored.instance_variable_get("@#{field}")).to eq(value)
+        end
+      end
+    end
+
+    context 'channel 1' do
+      include_examples 'a compatible channel snapshot', Rubyboy::ApuChannels::Channel1, %i[
+        cycles frequency frequency_timer wave_duty_position enabled dac_enabled length_enabled
+        is_upwards is_decrementing sweep_enabled sweep_period sweep_shift period period_timer
+        current_volume initial_volume shadow_frequency sweep_timer length_timer wave_duty_pattern
+      ]
+    end
+
+    context 'channel 2' do
+      include_examples 'a compatible channel snapshot', Rubyboy::ApuChannels::Channel2, %i[
+        cycles frequency frequency_timer wave_duty_position enabled dac_enabled length_enabled
+        is_upwards is_decrementing period period_timer current_volume initial_volume shadow_frequency
+        length_timer wave_duty_pattern
+      ]
+    end
+
+    context 'channel 3' do
+      include_examples 'a compatible channel snapshot', Rubyboy::ApuChannels::Channel3, %i[
+        cycles frequency frequency_timer wave_duty_position enabled dac_enabled length_enabled
+        is_upwards is_decrementing sweep_enabled sweep_period sweep_shift period period_timer
+        current_volume initial_volume shadow_frequency sweep_timer length_timer wave_duty_pattern
+        output_level volume_shift wave_ram
+      ]
+
+      it 'keeps wave RAM independent when snapshotting and restoring' do
+        channel = Rubyboy::ApuChannels::Channel3.new
+        channel.wave_ram[0] = 0x42
+        state = channel.hardware_state
+        channel.wave_ram[0] = 0x99
+
+        expect(state.fetch(:wave_ram)[0]).to eq(0x42)
+
+        channel.restore_hardware_state(state)
+        state.fetch(:wave_ram)[0] = 0x11
+
+        expect(channel.wave_ram[0]).to eq(0x42)
+      end
+    end
+
+    context 'channel 4' do
+      include_examples 'a compatible channel snapshot', Rubyboy::ApuChannels::Channel4, %i[
+        cycles frequency frequency_timer wave_duty_position enabled dac_enabled length_enabled
+        is_upwards is_decrementing sweep_enabled sweep_period sweep_shift period period_timer
+        current_volume initial_volume shadow_frequency sweep_timer length_timer wave_duty_pattern
+        lfsr width_mode shift_amount divisor_code
+      ]
+    end
+  end
 end

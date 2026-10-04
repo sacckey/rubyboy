@@ -174,30 +174,211 @@ module Rubyboy
   end
 
   module ApuChannels
-    module ChannelHardwareState
-      HARDWARE_FIELDS = %i[
-        cycles frequency frequency_timer wave_duty_position enabled dac_enabled length_enabled
-        is_upwards is_decrementing sweep_enabled sweep_period sweep_shift period period_timer
-        current_volume initial_volume shadow_frequency sweep_timer length_timer wave_duty_pattern
-        output_level volume_shift wave_ram lfsr width_mode shift_amount divisor_code
-      ].freeze
-
+    class Channel1
       def hardware_state
-        HARDWARE_FIELDS.each_with_object({}) do |name, state|
-          ivar = "@#{name}"
-          state[name] = instance_variable_get(ivar) if instance_variable_defined?(ivar)
-        end
+        {
+          cycles: @cycles,
+          frequency: @frequency,
+          frequency_timer: @frequency_timer,
+          wave_duty_position: @wave_duty_position,
+          enabled: @enabled,
+          dac_enabled: @dac_enabled,
+          length_enabled: @length_enabled,
+          is_upwards: @is_upwards,
+          is_decrementing: @is_decrementing,
+          sweep_enabled: @sweep_enabled,
+          sweep_period: @sweep_period,
+          sweep_shift: @sweep_shift,
+          period: @period,
+          period_timer: @period_timer,
+          current_volume: @current_volume,
+          initial_volume: @initial_volume,
+          shadow_frequency: @shadow_frequency,
+          sweep_timer: @sweep_timer,
+          length_timer: @length_timer,
+          wave_duty_pattern: @wave_duty_pattern
+        }
       end
 
       def restore_hardware_state(state)
-        state.each { |name, value| instance_variable_set("@#{name}", value) }
+        @cycles = state.fetch(:cycles)
+        @frequency = state.fetch(:frequency)
+        @frequency_timer = state.fetch(:frequency_timer)
+        @wave_duty_position = state.fetch(:wave_duty_position)
+        @enabled = state.fetch(:enabled)
+        @dac_enabled = state.fetch(:dac_enabled)
+        @length_enabled = state.fetch(:length_enabled)
+        @is_upwards = state.fetch(:is_upwards)
+        @is_decrementing = state.fetch(:is_decrementing)
+        @sweep_enabled = state.fetch(:sweep_enabled)
+        @sweep_period = state.fetch(:sweep_period)
+        @sweep_shift = state.fetch(:sweep_shift)
+        @period = state.fetch(:period)
+        @period_timer = state.fetch(:period_timer)
+        @current_volume = state.fetch(:current_volume)
+        @initial_volume = state.fetch(:initial_volume)
+        @shadow_frequency = state.fetch(:shadow_frequency)
+        @sweep_timer = state.fetch(:sweep_timer)
+        @length_timer = state.fetch(:length_timer)
+        @wave_duty_pattern = state.fetch(:wave_duty_pattern)
       end
     end
 
-    Channel1.include(ChannelHardwareState)
-    Channel2.include(ChannelHardwareState)
-    Channel3.include(ChannelHardwareState)
-    Channel4.include(ChannelHardwareState)
+    class Channel2
+      def hardware_state
+        {
+          cycles: @cycles,
+          frequency: @frequency,
+          frequency_timer: @frequency_timer,
+          wave_duty_position: @wave_duty_position,
+          enabled: @enabled,
+          dac_enabled: @dac_enabled,
+          length_enabled: @length_enabled,
+          is_upwards: @is_upwards,
+          is_decrementing: @is_decrementing,
+          period: @period,
+          period_timer: @period_timer,
+          current_volume: @current_volume,
+          initial_volume: @initial_volume,
+          shadow_frequency: @shadow_frequency,
+          length_timer: @length_timer,
+          wave_duty_pattern: @wave_duty_pattern
+        }
+      end
+
+      def restore_hardware_state(state)
+        @cycles = state.fetch(:cycles)
+        @frequency = state.fetch(:frequency)
+        @frequency_timer = state.fetch(:frequency_timer)
+        @wave_duty_position = state.fetch(:wave_duty_position)
+        @enabled = state.fetch(:enabled)
+        @dac_enabled = state.fetch(:dac_enabled)
+        @length_enabled = state.fetch(:length_enabled)
+        @is_upwards = state.fetch(:is_upwards)
+        @is_decrementing = state.fetch(:is_decrementing)
+        @period = state.fetch(:period)
+        @period_timer = state.fetch(:period_timer)
+        @current_volume = state.fetch(:current_volume)
+        @initial_volume = state.fetch(:initial_volume)
+        @shadow_frequency = state.fetch(:shadow_frequency)
+        @length_timer = state.fetch(:length_timer)
+        @wave_duty_pattern = state.fetch(:wave_duty_pattern)
+      end
+    end
+
+    class Channel3
+      def hardware_state
+        {
+          cycles: @cycles,
+          frequency: @frequency,
+          frequency_timer: @frequency_timer,
+          wave_duty_position: @wave_duty_position,
+          enabled: @enabled,
+          dac_enabled: @dac_enabled,
+          length_enabled: @length_enabled,
+          is_upwards: @is_upwards,
+          is_decrementing: @is_decrementing,
+          sweep_enabled: @sweep_enabled,
+          sweep_period: @sweep_period,
+          sweep_shift: @sweep_shift,
+          period: @period,
+          period_timer: @period_timer,
+          current_volume: @current_volume,
+          initial_volume: @initial_volume,
+          shadow_frequency: @shadow_frequency,
+          sweep_timer: @sweep_timer,
+          length_timer: @length_timer,
+          wave_duty_pattern: @wave_duty_pattern,
+          output_level: @output_level,
+          volume_shift: @volume_shift,
+          wave_ram: @wave_ram.dup
+        }
+      end
+
+      def restore_hardware_state(state)
+        @cycles = state.fetch(:cycles)
+        @frequency = state.fetch(:frequency)
+        @frequency_timer = state.fetch(:frequency_timer)
+        @wave_duty_position = state.fetch(:wave_duty_position)
+        @enabled = state.fetch(:enabled)
+        @dac_enabled = state.fetch(:dac_enabled)
+        @length_enabled = state.fetch(:length_enabled)
+        @is_upwards = state.fetch(:is_upwards)
+        @is_decrementing = state.fetch(:is_decrementing)
+        @sweep_enabled = state.fetch(:sweep_enabled)
+        @sweep_period = state.fetch(:sweep_period)
+        @sweep_shift = state.fetch(:sweep_shift)
+        @period = state.fetch(:period)
+        @period_timer = state.fetch(:period_timer)
+        @current_volume = state.fetch(:current_volume)
+        @initial_volume = state.fetch(:initial_volume)
+        @shadow_frequency = state.fetch(:shadow_frequency)
+        @sweep_timer = state.fetch(:sweep_timer)
+        @length_timer = state.fetch(:length_timer)
+        @wave_duty_pattern = state.fetch(:wave_duty_pattern)
+        @output_level = state.fetch(:output_level)
+        @volume_shift = state.fetch(:volume_shift)
+        @wave_ram = state.fetch(:wave_ram).dup
+      end
+    end
+
+    class Channel4
+      def hardware_state
+        {
+          cycles: @cycles,
+          frequency: @frequency,
+          frequency_timer: @frequency_timer,
+          wave_duty_position: @wave_duty_position,
+          enabled: @enabled,
+          dac_enabled: @dac_enabled,
+          length_enabled: @length_enabled,
+          is_upwards: @is_upwards,
+          is_decrementing: @is_decrementing,
+          sweep_enabled: @sweep_enabled,
+          sweep_period: @sweep_period,
+          sweep_shift: @sweep_shift,
+          period: @period,
+          period_timer: @period_timer,
+          current_volume: @current_volume,
+          initial_volume: @initial_volume,
+          shadow_frequency: @shadow_frequency,
+          sweep_timer: @sweep_timer,
+          length_timer: @length_timer,
+          wave_duty_pattern: @wave_duty_pattern,
+          lfsr: @lfsr,
+          width_mode: @width_mode,
+          shift_amount: @shift_amount,
+          divisor_code: @divisor_code
+        }
+      end
+
+      def restore_hardware_state(state)
+        @cycles = state.fetch(:cycles)
+        @frequency = state.fetch(:frequency)
+        @frequency_timer = state.fetch(:frequency_timer)
+        @wave_duty_position = state.fetch(:wave_duty_position)
+        @enabled = state.fetch(:enabled)
+        @dac_enabled = state.fetch(:dac_enabled)
+        @length_enabled = state.fetch(:length_enabled)
+        @is_upwards = state.fetch(:is_upwards)
+        @is_decrementing = state.fetch(:is_decrementing)
+        @sweep_enabled = state.fetch(:sweep_enabled)
+        @sweep_period = state.fetch(:sweep_period)
+        @sweep_shift = state.fetch(:sweep_shift)
+        @period = state.fetch(:period)
+        @period_timer = state.fetch(:period_timer)
+        @current_volume = state.fetch(:current_volume)
+        @initial_volume = state.fetch(:initial_volume)
+        @shadow_frequency = state.fetch(:shadow_frequency)
+        @sweep_timer = state.fetch(:sweep_timer)
+        @length_timer = state.fetch(:length_timer)
+        @wave_duty_pattern = state.fetch(:wave_duty_pattern)
+        @lfsr = state.fetch(:lfsr)
+        @width_mode = state.fetch(:width_mode)
+        @shift_amount = state.fetch(:shift_amount)
+        @divisor_code = state.fetch(:divisor_code)
+      end
+    end
   end
 
   class Apu
