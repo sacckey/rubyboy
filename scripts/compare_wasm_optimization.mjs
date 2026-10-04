@@ -2,20 +2,20 @@
 // node scripts/compare_wasm_optimization.mjs BASELINE.wasm CANDIDATE.wasm [OUTPUT.json]
 import assert from 'node:assert/strict';
 import { createHash, webcrypto } from 'node:crypto';
-import { readFileSync, writeFileSync } from 'node:fs';
+import { lstatSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { performance } from 'node:perf_hooks';
 import { arch, cpus, platform, release } from 'node:os';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { DefaultRubyVM } from '../build/browser-runtime/node_modules/@ruby/wasm-wasi/dist/esm/browser.js';
-import { File, Directory } from '../build/browser-runtime/node_modules/@bjorn3/browser_wasi_shim/dist/index.js';
-import { mountCore, RubyboyVM } from '../docs/rubyboy-vm.js';
+import { File } from '../build/browser-runtime/node_modules/@bjorn3/browser_wasi_shim/dist/index.js';
+import { RubyboyVM } from '../docs/rubyboy-vm.js';
 
 if (!globalThis.crypto) globalThis.crypto = webcrypto;
 const REPO = resolve(fileURLToPath(new URL('../', import.meta.url)));
 const SCRIPT = fileURLToPath(import.meta.url);
-const CORE_PATH = `${REPO}/docs/rubyboy-core.json`;
+const LIB_PATH = `${REPO}/lib`;
 const ROM_PATH = `${REPO}/lib/roms/tobu.gb`;
 const SDK_PACKAGE_PATH = `${REPO}/build/browser-runtime/node_modules/@ruby/wasm-wasi/package.json`;
 const SHIM_PACKAGE_PATH = `${REPO}/build/browser-runtime/node_modules/@bjorn3/browser_wasi_shim/package.json`;
@@ -35,7 +35,7 @@ const CONDITIONS = Object.freeze({
   timer: 'performance.now; one timer around all 600 calls and their VFS copies/transfers',
   hash_work_in_timed_region: false,
   rom: ROM_PATH,
-  source_overlay: CORE_PATH,
+  packed_sources: '/lib',
   ruby_version: '4.0.7',
   sdk_version: '2.10.1',
   wasi_shim_version: '0.4.2',
@@ -44,7 +44,7 @@ const CONDITIONS = Object.freeze({
   candidate_command: 'wasm-opt baseline --strip-dwarf -O4 --converge -g -o candidate',
   acceptance: 'All final framebuffer, full measured Float32 stereo audio, and final Marshal state hashes match across every trial; all five candidate trials are faster than their paired baseline; median paired FPS speedup is at least 5%. Otherwise retain baseline.',
   min_median_paired_speedup_percent: 5,
-  cold_measurement_scope: 'First WebAssembly.compile in each fresh Node process; VM init, source mount, adapter construction and ROM upload timed separately. Node startup, JS imports, file reads, and network transfer excluded.',
+  cold_measurement_scope: 'First WebAssembly.compile in each fresh Node process; VM init, adapter construction and ROM upload timed separately. Node startup, JS imports, file reads, and network transfer excluded.',
 });
 
 const hash = bytes => createHash('sha256').update(new Uint8Array(bytes)).digest('hex');
@@ -55,21 +55,19 @@ function fixtures() {
   const shimPackage = JSON.parse(readFileSync(SHIM_PACKAGE_PATH));
   assert.equal(sdkPackage.version, CONDITIONS.sdk_version, 'Pin the original Ruby SDK to 2.10.1');
   assert.equal(shimPackage.version, CONDITIONS.wasi_shim_version, 'Pin the original WASI shim to 0.4.2');
-  const bundleBytes = readFileSync(CORE_PATH);
-  const bundle = JSON.parse(bundleBytes);
-  assert.equal(bundle.api_version, 1);
-  const sourceHashes = {};
-  for (const file of bundle.files) {
-    const bytes = readFileSync(`${REPO}/lib/${file.path}`);
-    assert.equal(bytes.toString(), file.source, `Source overlay is stale: ${file.path}`);
-    assert.equal(hash(bytes), file.sha256, `Source hash: ${file.path}`);
-    sourceHashes[file.path] = file.sha256;
+  function sourceFiles(directory, prefix = '') {
+    return readdirSync(directory).sort().flatMap(name => {
+      const path = `${directory}/${name}`;
+      const relative = `${prefix}${name}`;
+      if (lstatSync(path).isDirectory()) return sourceFiles(path, `${relative}/`);
+      return name.endsWith('.rb') ? [relative] : [];
+    });
   }
+  const sourceHashes = Object.fromEntries(sourceFiles(LIB_PATH).map(path => [path, hash(readFileSync(`${LIB_PATH}/${path}`))]));
   const romBytes = readFileSync(ROM_PATH);
   return {
-    bundle, romBytes,
+    romBytes,
     metadata: {
-      core_bundle_sha256: hash(bundleBytes),
       source_hashes: sourceHashes,
       rom_sha256: hash(romBytes),
       adapter_sha256: hash(readFileSync(ADAPTER_PATH)),
@@ -81,7 +79,7 @@ function fixtures() {
 }
 
 async function trial(label, pair, wasmPath) {
-  const { bundle, romBytes, metadata } = fixtures();
+  const { romBytes, metadata } = fixtures();
   const wasmBytes = readFileSync(wasmPath);
   const compileStart = performance.now();
   const wasmModule = await WebAssembly.compile(wasmBytes);
@@ -89,7 +87,6 @@ async function trial(label, pair, wasmPath) {
   const initStart = performance.now();
   const { vm, wasi } = await DefaultRubyVM(wasmModule);
   const root = wasi.fds[3].dir;
-  await mountCore(root, bundle, { File, Directory });
   const core = new RubyboyVM(vm, root, File);
   core.loadUploadedRom(Uint8Array.from(romBytes).buffer);
   const initMs = performance.now() - initStart;
@@ -106,7 +103,13 @@ async function trial(label, pair, wasmPath) {
   };
   assert.equal(runtime.yjit_enabled, false);
   assert.equal(runtime.zjit_enabled, false);
-  assert.equal(runtime.executor_source, '/rubyboy-core/lib/executor.rb');
+  assert.equal(runtime.executor_source, '/lib/executor.rb');
+  // Validate the actual packed sources before warmup, outside timed operations.
+  vm.eval("require 'digest/sha2'");
+  for (const [path, expected] of Object.entries(metadata.source_hashes)) {
+    const actual = vm.eval(`Digest::SHA256.file(${JSON.stringify(`/lib/${path}`)}).hexdigest`).toString();
+    assert.equal(actual, expected, `Packed source differs: ${path}`);
+  }
 
   // Match the unthrottled worker's core, VFS copies, and transferable messages.
   // The audio and final video are retained for checksums after the timer stops.
@@ -153,7 +156,7 @@ async function trial(label, pair, wasmPath) {
   return {
     pair, label, wasm_path: wasmPath, artifact_sha256: hash(wasmBytes), runtime, fixtures: metadata,
     fresh_process_cold_compile_ms: compileMs,
-    fresh_vm_init_mount_core_rom_ms: initMs,
+    fresh_vm_init_rom_ms: initMs,
     warmup_ms: warmupMs,
     measured_ms: elapsedMs,
     measured_run_frame_calls: CONDITIONS.measured_run_frame_calls,
@@ -246,7 +249,7 @@ if (process.argv[2] === '--internal-trial') {
     const artifacts = { baseline: { path: baselinePath, sha256: hash(readFileSync(baselinePath)) }, candidate: { path: candidatePath, sha256: hash(readFileSync(candidatePath)) } };
     assert.notEqual(artifacts.baseline.sha256, artifacts.candidate.sha256, 'Candidate and baseline artifacts must differ');
     const report = {
-      schema_version: 1, created_at: new Date().toISOString(), conditions: CONDITIONS,
+      schema_version: 2, created_at: new Date().toISOString(), conditions: CONDITIONS,
       environment: { node: process.version, versions: process.versions, platform: platform(), arch: arch(), os_release: release(), cpu: cpus()[0]?.model, logical_cpus: cpus().length },
       fixtures: initialFixtures, artifacts, trials: [],
     };

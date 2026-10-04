@@ -113,18 +113,17 @@ their initial state: `?throttle=0&mute=1` for unlimited, muted playback, or
 The APU continues to run in all modes.
 
 The large Wasm download remains local-first with the existing proxy fallback;
-Wasm files remain excluded from Git. A generated text bundle supplies the
-current Ruby sources separately, so an older downloaded module cannot silently
-provide an older emulator implementation. Regenerate it after changing browser
-core code:
+Wasm files remain excluded from Git. The Ruby VM, Rubyboy sources and ROMs are
+packed into one Wasm file. Repack and upload `rubyboy.wasm` after changing the
+emulator code.
 
 ```sh
-ruby scripts/build-browser-core.rb
+mise exec ruby@4.0.7 -- ruby exe/rubyboy-wasm pack
 python3 -m http.server 8765 --bind 127.0.0.1 --directory docs
 ```
 
-See [browser playback and verification](docs/wasm-playback.md) for the source
-bundle, verification commands and comparison conditions.
+See [browser playback and verification](docs/wasm-playback.md) for the build,
+verification commands and comparison conditions.
 
 ## Contributing
 

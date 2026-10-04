@@ -10,28 +10,13 @@ Execution and audio use a worker and an AudioWorklet. The scheduler is separate
 from the Ruby VM adapter so a future Spinel build can use the same scheduler
 and transfer path.
 
-## Source bundle
+## Packed Ruby sources
 
-The downloaded Wasm includes a Ruby VM and packed Ruby files. Those packed
-files can be older than the repository. `scripts/build-browser-core.rb`
-collects the current browser core's `require_relative` dependency graph into
-`docs/rubyboy-core.json`. This is about 89 KB of text, including a SHA-256 for
-each Ruby source; it contains no Ruby VM, SDL dependencies or ROM binaries.
-
-The worker mounts these files at `/rubyboy-core/lib` and loads the executor
-from that exact location. The unique path avoids the packed `/lib` mount taking
-precedence. Built-in ROMs continue to come from the existing `/lib/roms`.
-Uploaded ROMs use the same CPU, timer, PPU and APU code.
-
-Regenerate and commit the JSON whenever one of its source files changes:
-
-```sh
-ruby scripts/build-browser-core.rb
-```
-
-The generator needs only Ruby's standard library. The runtime test checks that
-every bundled file and its SHA-256 match the current repository. The worker
-also validates the bundle's hashes before loading the Ruby sources.
+`rubyboy.wasm` contains the Ruby VM, Rubyboy Ruby sources and bundled ROMs.
+The pack command embeds `./lib` at `/lib`, and the browser loads `/lib/executor`
+directly from the Wasm. There is no separate source download or JSON mounting.
+Repack and upload the Wasm after changing any emulator source; built-in ROMs
+remain under `/lib/roms`.
 
 ## Build Ruby 4.0.7 and pack the emulator
 
@@ -132,10 +117,9 @@ node scripts/test_wasm_runtime.mjs /path/to/rubyboy.wasm
 
 If the Wasm is at `docs/rubyboy.wasm`, omit the path argument.
 `verify_wasm_package.mjs` checks Ruby 4.0.7, the current Rubyboy version, and the
-file list, size and SHA-256 of every regular file packed under `/lib`, without mounting the
-source overlay. `test_wasm_runtime.mjs` prints
-the host Ruby description, Wasm Ruby description, Wasm hash, Ruby source bundle
-hash and ROM hash. It compares pixels and Float32 audio with CRuby for both
+file list, size and SHA-256 of every regular file packed under `/lib`.
+`test_wasm_runtime.mjs` prints the host Ruby description, Wasm Ruby description,
+Wasm hash and ROM hash. It compares pixels and Float32 audio with CRuby for both
 frame execution and split cycle budgets, including input changes. It also
 checks source loading, copied buffers, audio consumption, instruction overshoot,
 LCD-off behavior and the existing packed ROMs.
@@ -166,8 +150,7 @@ Install the JavaScript dependencies from the Verification section first.
 The benchmark runs five alternating pairs: baseline/candidate, candidate/baseline,
 baseline/candidate, candidate/baseline, baseline/candidate. Every trial starts a
 fresh Node process and Ruby VM, runs 300 warmup frame-step calls, then times
-600 calls with all buttons released. It uses the same current Ruby source
-bundle and Tobu ROM, keeps the APU active, and includes framebuffer/audio VFS
+600 calls with all buttons released. It validates the same Ruby sources packed under `/lib` and uses the same Tobu ROM, keeps the APU active, and includes framebuffer/audio VFS
 copies plus transfers of both buffers. SHA-256 calculation is outside timing.
 Frame calls run in a synchronous loop; no scheduler, real-time synchronization,
 60 FPS limiter, VSync, or audio-device backpressure is used.
@@ -187,6 +170,11 @@ artifact for throughput. The JSON retains every trial, input/source/artifact
 hash, runtime identity and separate cold timings; do not drop slower trials.
 
 ## Measured result: 2026-10-04
+
+These historical measurements used the former JSON source-loading path. The
+current player and benchmark load packed `/lib` sources directly. The results
+below are retained as a record of that earlier experiment; they are not new
+measurements of the current startup path.
 
 Environment: Apple M4 (10 logical CPUs), arm64, Darwin 24.5.0,
 Node v24.4.0 / V8 13.6.233.10-node.17;

@@ -146,7 +146,7 @@ RSpec.describe Executor do
     expect(File).to have_received(:binwrite).with('/audio.data', a_string_matching(/./m))
   end
 
-  it 'uses the existing packed ROM directory independently of the source overlay' do
+  it 'uses the existing packed ROM directory' do
     executor = described_class.new(rom_path)
     rom = File.binread(rom_path)
     allow(File).to receive(:open).with('/lib/roms/bgbtest.gb', 'r').and_yield(StringIO.new(rom))

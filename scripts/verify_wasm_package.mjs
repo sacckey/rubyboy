@@ -1,4 +1,4 @@
-// Verify the embedded package directly, without the generated browser-source overlay.
+// Verify the Ruby sources and ROMs embedded in the Wasm package.
 // node scripts/verify_wasm_package.mjs [WASM_PATH] [EXPECTED_RUBY_VERSION]
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
@@ -32,7 +32,7 @@ const wasmBytes = readFileSync(wasmPath);
 const module = await WebAssembly.compile(wasmBytes);
 const { vm } = await DefaultRubyVM(module);
 
-// Read only the files packed into the Wasm, without mounting any generated overlay.
+// Read the sources and ROMs packed into the Wasm.
 const rubyDescription = vm.eval('RUBY_DESCRIPTION').toString();
 assert.equal(vm.eval('RUBY_VERSION').toString(), process.argv[3] || '4.0.7', 'Wasm Ruby version');
 vm.eval("require '/lib/rubyboy/version'");

@@ -6,22 +6,14 @@ import { readFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { DefaultRubyVM } from '../build/browser-runtime/node_modules/@ruby/wasm-wasi/dist/esm/browser.js';
-import { File, Directory } from '../build/browser-runtime/node_modules/@bjorn3/browser_wasi_shim/dist/index.js';
-import { mountCore, RubyboyVM } from '../docs/rubyboy-vm.js';
+import { File } from '../build/browser-runtime/node_modules/@bjorn3/browser_wasi_shim/dist/index.js';
+import { RubyboyVM } from '../docs/rubyboy-vm.js';
 
 const sourceRoot = new URL('../', import.meta.url);
 const hash = bytes => createHash('sha256').update(new Uint8Array(bytes)).digest('hex');
-const bundleBytes = readFileSync(new URL('docs/rubyboy-core.json', sourceRoot));
-const bundle = JSON.parse(bundleBytes);
 const romBytes = readFileSync(new URL('lib/roms/tobu.gb', sourceRoot));
 const wasmPath = process.argv[2] || fileURLToPath(new URL('docs/rubyboy.wasm', sourceRoot));
 const wasmBytes = readFileSync(wasmPath);
-
-for (const file of bundle.files) {
-  const source = readFileSync(new URL(`lib/${file.path}`, sourceRoot));
-  assert.equal(source.toString(), file.source, `Regenerate the browser core: ${file.path}`);
-  assert.equal(hash(source), file.sha256, `Source SHA-256: ${file.path}`);
-}
 
 const referenceProcess = spawnSync('ruby', [fileURLToPath(new URL('wasm_reference.rb', import.meta.url))], {
   cwd: fileURLToPath(sourceRoot), encoding: 'utf8', maxBuffer: 1024 * 1024,
@@ -33,24 +25,17 @@ assert.equal(hash(romBytes), reference.rom_sha256);
 console.log(`Host: ${reference.ruby}`);
 console.log(`Wasm: ${wasmPath}`);
 console.log(`Wasm SHA-256: ${hash(wasmBytes)}`);
-console.log(`Ruby core bundle SHA-256: ${hash(bundleBytes)} (${bundle.files.length} source files)`);
 console.log(`ROM SHA-256: ${reference.rom_sha256}`);
 
 const module = await WebAssembly.compile(wasmBytes);
 const { vm, wasi } = await DefaultRubyVM(module);
 const root = wasi.fds[3].dir;
-await mountCore(root, bundle, { File, Directory });
 const core = new RubyboyVM(vm, root, File);
 console.log(`Browser runtime: ${vm.eval('RUBY_DESCRIPTION').toString()}`);
 const bundledRom = Buffer.from(vm.eval("File.binread('/lib/roms/tobu.gb').unpack1('H*')").toString(), 'hex');
 assert.equal(hash(bundledRom), hash(romBytes), 'The default packed ROM must match the repository ROM');
 assert.equal(vm.eval('Executor.instance_method(:exec_cycles).source_location.first').toString(),
-  '/rubyboy-core/lib/executor.rb');
-
-// Reject corrupted generated sources before Ruby loads them.
-const corrupted = structuredClone(bundle);
-corrupted.files[0].source += '\n# altered';
-await assert.rejects(mountCore(new Directory(new Map()), corrupted, { File, Directory }), /hash mismatch/);
+  '/lib/executor.rb');
 
 for (const scenario of reference.scenarios) {
   // Upload the current repository ROM so the old packed asset cannot change the fixture.
@@ -123,11 +108,11 @@ core.clearOutputs();
 assert.equal(core.popAudio(), null);
 assert.equal(root.contents.has('video.data'), false);
 
-// Existing packed ROM names remain available with the unique source mount.
+// Existing ROMs and Ruby sources are packed together under /lib.
 core.loadPreInstalledRom('tobu.gb');
 core.runFrame(15, 15);
 assert.equal(core.framebuffer().byteLength, 160 * 144 * 4);
 core.loadPreInstalledRom('bgbtest.gb');
 core.runFrame(15, 15);
 assert.equal(core.framebuffer().byteLength, 160 * 144 * 4);
-console.log('PASS source overlay, audio consumption, buffer transfer, split budgets, LCD-off, and bundled ROMs');
+console.log('PASS packed sources, audio consumption, buffer transfer, split budgets, LCD-off, and bundled ROMs');

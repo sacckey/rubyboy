@@ -1,35 +1,5 @@
-// The downloaded module supplies CRuby; this bundle supplies the current core.
-// A unique mount avoids the older /lib files embedded by wasi-vfs.
-const CORE_PATH = '/rubyboy-core/lib';
+// CRuby and the Rubyboy sources are packed into the downloaded Wasm.
 const ROM_NAMES = new Set(['tobu.gb', 'bgbtest.gb']);
-
-function directoryAt(root, components, Directory) {
-  let directory = root;
-  for (const component of components) {
-    if (!directory.contents.has(component)) directory.contents.set(component, new Directory(new Map()));
-    directory = directory.contents.get(component);
-  }
-  return directory;
-}
-
-export async function mountCore(root, bundle, { File, Directory }) {
-  if (bundle.api_version !== 1 || !Array.isArray(bundle.files)) {
-    throw new Error('Unsupported Ruby core bundle. Run scripts/build-browser-core.rb.');
-  }
-  const encoder = new TextEncoder();
-  for (const file of bundle.files) {
-    if (!/^(?:[a-z0-9_]+\/)*[a-z0-9_]+\.rb$/.test(file.path) || typeof file.source !== 'string') {
-      throw new Error('Invalid Ruby core source path.');
-    }
-    const bytes = encoder.encode(file.source);
-    const hash = new Uint8Array(await crypto.subtle.digest('SHA-256', bytes));
-    const digest = [...hash].map(value => value.toString(16).padStart(2, '0')).join('');
-    if (digest !== file.sha256) throw new Error(`Ruby source hash mismatch: ${file.path}`);
-    const components = ['rubyboy-core', 'lib', ...file.path.split('/')];
-    const name = components.pop();
-    directoryAt(root, components, Directory).contents.set(name, new File(bytes));
-  }
-}
 
 export class RubyboyVM {
   constructor(vm, root, File) {
@@ -38,8 +8,7 @@ export class RubyboyVM {
     this.File = File;
     this.executor = vm.eval(`
       require 'js'
-      $LOAD_PATH.unshift('${CORE_PATH}')
-      require '${CORE_PATH}/executor'
+      require '/lib/executor'
       $executor = Executor.new
     `);
     this.inputValues = Array.from({ length: 16 }, (_, value) => vm.eval(String(value)));

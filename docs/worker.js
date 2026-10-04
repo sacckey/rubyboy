@@ -1,7 +1,7 @@
 import { DefaultRubyVM } from 'https://cdn.jsdelivr.net/npm/@ruby/wasm-wasi@2.10.1/dist/browser/+esm';
-import { File, Directory } from 'https://cdn.jsdelivr.net/npm/@bjorn3/browser_wasi_shim@0.4.2/+esm';
+import { File } from 'https://cdn.jsdelivr.net/npm/@bjorn3/browser_wasi_shim@0.4.2/+esm';
 import { EmulationLoop } from './emulation-loop.js';
-import { RubyboyVM, mountCore } from './rubyboy-vm.js';
+import { RubyboyVM } from './rubyboy-vm.js';
 
 class Rubyboy {
   constructor() {
@@ -20,18 +20,12 @@ class Rubyboy {
     }
     const module = await WebAssembly.compileStreaming(response);
     const { vm, wasi } = await DefaultRubyVM(module);
-    const sources = await fetch('./rubyboy-core.json');
-    if (!sources.ok) throw new Error('Ruby source bundle is missing. Run scripts/build-browser-core.rb.');
-    const bundle = await sources.json();
-    await mountCore(wasi.fds[3].dir, bundle, { File, Directory });
     this.adapter = new RubyboyVM(vm, wasi.fds[3].dir, File);
     this.loop = new EmulationLoop(this.adapter, (message, transfers) => {
       postMessage({ ...message, requestId: this.requestId }, transfers);
     });
     return {
       ruby: vm.eval('RUBY_DESCRIPTION').toString(),
-      apiVersion: bundle.api_version,
-      sourceHashes: Object.fromEntries(bundle.files.map(file => [file.path, file.sha256])),
     };
   }
 
