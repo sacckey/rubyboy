@@ -27,6 +27,10 @@ module Rubyboy
       @cpu = Cpu.new(bus, interrupt)
     end
 
+    def framebuffer
+      @ppu.buffer
+    end
+
     def step
       loop do
         cycles = @cpu.exec

@@ -17,7 +17,7 @@ module Rubyboy
       SDL::SDL_SCANCODE_0
     ].freeze
 
-    def initialize(rom_path)
+    def initialize(rom_path, audio: true)
       @rom_path = rom_path
       rom_data = File.open(rom_path, 'r') { _1.read.bytes }
       @rom = Rom.new(rom_data)
@@ -31,40 +31,47 @@ module Rubyboy
       @bus = Bus.new(@ppu, @rom, @ram, @mbc, @timer, @interrupt, @joypad, @apu)
       @cpu = Cpu.new(@bus, @interrupt)
       @lcd = Lcd.new
-      @audio = Audio.new
+      @audio = audio ? Audio.new : nil
       @prev_save_state_keys = Array.new(SAVE_STATE_KEYS.size, 0)
       @save_file = @rom.battery? ? SaveFile.new(default_save_path(rom_path)) : nil
       load_save_file
     end
 
-    def start
-      SDL.InitSubSystem(SDL::INIT_KEYBOARD)
+    def start(frames: nil, realtime: true)
+      raise ArgumentError, 'frames must be a positive integer' unless frames.nil? || (frames.is_a?(Integer) && frames > 0)
 
-      start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC, :nanosecond)
-      elapsed_machine_time = 0
-      catch(:exit_loop) do
-        loop do
-          elapsed_real_time = Process.clock_gettime(Process::CLOCK_MONOTONIC, :nanosecond) - start_time
-          while elapsed_real_time > elapsed_machine_time
-            cycles = @cpu.exec
-            @timer.step(cycles)
-            @audio.queue(@apu.samples) if @apu.step(cycles)
-            if @ppu.step(cycles)
-              @lcd.draw(@ppu.buffer)
-              key_input_check
-              throw :exit_loop if @lcd.window_should_close?
+      begin
+        SDL.InitSubSystem(SDL::INIT_KEYBOARD)
+
+        start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC, :nanosecond) if realtime
+        elapsed_machine_time = 0
+        frame_count = 0
+        catch(:exit_loop) do
+          loop do
+            elapsed_real_time = Process.clock_gettime(Process::CLOCK_MONOTONIC, :nanosecond) - start_time if realtime
+            while !realtime || elapsed_real_time > elapsed_machine_time
+              cycles = @cpu.exec
+              @timer.step(cycles)
+              @audio.queue(@apu.samples) if @apu.step(cycles) && @audio
+              if @ppu.step(cycles)
+                @lcd.draw(@ppu.buffer)
+                key_input_check
+                frame_count += 1
+                throw :exit_loop if frames && frame_count >= frames
+                throw :exit_loop if @lcd.window_should_close?
+              end
+
+              elapsed_machine_time += cycles * CYCLE_NANOSEC if realtime
             end
-
-            elapsed_machine_time += cycles * CYCLE_NANOSEC
           end
         end
+      rescue StandardError => e
+        puts e.to_s[0, 100]
+        raise e
+      ensure
+        @lcd.close_window
+        save_save_file
       end
-      @lcd.close_window
-    rescue StandardError => e
-      puts e.to_s[0, 100]
-      raise e
-    ensure
-      save_save_file
     end
 
     def bench(frames)
@@ -95,7 +102,7 @@ module Rubyboy
       state_path = path || slot_path(slot)
       return false unless StateFile.read(state_path, rom: @rom) { |state| restore_hardware_state(state) }
 
-      @audio.clear_queue
+      @audio&.clear_queue
       puts "Loaded state from #{state_path}"
       true
     end

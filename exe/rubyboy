@@ -4,16 +4,29 @@
 require 'rubyboy'
 require 'optparse'
 
+frames = nil
+realtime = true
+audio = true
+
 begin
   OptionParser.new do |opts|
     opts.banner = "Usage: #{File.basename($PROGRAM_NAME)} ROM_PATH"
+
+    opts.on('--frames N', 'Exit after N frames (positive integer)') do |value|
+      value = Integer(value)
+      raise OptionParser::InvalidArgument, 'frames must be a positive integer' unless value > 0
+
+      frames = value
+    end
+    opts.on('--unlimited', 'Disable real-time synchronization') { realtime = false }
+    opts.on('--no-audio', 'Disable audio output while keeping APU emulation') { audio = false }
 
     opts.on('-h', '--help', 'Displays this help') do
       puts opts
       exit
     end
   end.parse!
-rescue OptionParser::ParseError => e
+rescue OptionParser::ParseError, ArgumentError => e
   puts e.message
   puts "Usage: #{File.basename($PROGRAM_NAME)} ROM_PATH"
   exit 1
@@ -28,4 +41,4 @@ else
   puts 'YJIT is not available in this environment.'
 end
 
-Rubyboy::Emulator.new(rom_path).start
+Rubyboy::Emulator.new(rom_path, audio:).start(frames:, realtime:)

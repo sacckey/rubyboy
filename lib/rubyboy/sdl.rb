@@ -53,6 +53,7 @@ module Rubyboy
     attach_function :GetKeyboardState, 'SDL_GetKeyboardState', [:pointer], :pointer
     attach_function :SetHint, 'SDL_SetHint', %i[string string], :int
     attach_function :RenderSetLogicalSize, 'SDL_RenderSetLogicalSize', %i[pointer int int], :int
+    attach_function :RenderSetVSync, 'SDL_RenderSetVSync', %i[pointer int], :int
     attach_function :SetWindowTitle, 'SDL_SetWindowTitle', %i[pointer string], :void
     attach_function :RaiseWindow, 'SDL_RaiseWindow', [:pointer], :void
     attach_function :GetError, 'SDL_GetError', [], :string

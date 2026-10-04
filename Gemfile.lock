@@ -3,18 +3,21 @@ PATH
   specs:
     rubyboy (1.5.1)
       ffi (~> 1.16, >= 1.16.3)
+      json (~> 2.8)
 
 GEM
   remote: https://rubygems.org/
   specs:
     ast (2.4.2)
     base64 (0.1.1)
+    benchmark (0.5.0)
     diff-lcs (1.5.0)
     ffi (1.16.3)
     heap-profiler (0.7.0)
     js (2.7.1)
-    json (2.6.3)
+    json (2.18.0)
     language_server-protocol (3.17.0.3)
+    ostruct (0.6.3)
     parallel (1.23.0)
     parser (3.2.2.4)
       ast (~> 2.4.1)
@@ -52,18 +55,22 @@ GEM
     rubocop-ast (1.29.0)
       parser (>= 3.2.1.0)
     ruby-progressbar (1.13.0)
+    ruby_wasm (2.7.1)
     ruby_wasm (2.7.1-x86_64-darwin)
     ruby_wasm (2.7.1-x86_64-linux)
     stackprof (0.2.25)
     unicode-display_width (2.5.0)
 
 PLATFORMS
+  arm64-darwin-24
   x86_64-darwin-23
   x86_64-linux
 
 DEPENDENCIES
+  benchmark
   heap-profiler (~> 0.7.0)
   js (= 2.7.1)
+  ostruct
   rake (~> 13.0)
   rspec (~> 3.12)
   rubocop (~> 1.57)
@@ -72,4 +79,4 @@ DEPENDENCIES
   stackprof (~> 0.2.25)
 
 BUNDLED WITH
-   2.4.20
+  4.0.20
