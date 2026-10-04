@@ -1,3 +1,14 @@
+## [1.6.0] - 2026-10-04
+
+- Add battery-backed saves and hardware-oriented save states
+- Fix MBC1 ROM bank mapping, external RAM size and RAM banking
+- Fix audio drop-outs and APU sample-rate drift
+- Support Spinel compilation and fix SDL event allocation
+- Add --frames, --unlimited and --no-audio player options
+- Add benchmark warmup, SDL rendering and JSON output
+- Disable VSync for rendered benchmarks and require SDL 2.0.18 or higher
+- Update JSON and development dependencies for recent Ruby versions
+
 ## [1.5.1] - 2025-02-16
 
 - Optimize Cartridge::Mbc1 and Bus
