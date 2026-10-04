@@ -1,8 +1,7 @@
 // The adapter owns the emulator and returns standalone buffers ready to transfer.
 const CLOCK_HZ = 4_194_304;
-const MAX_CYCLES_PER_STEP = 32_768;
-const MAX_CATCHUP_CYCLES = CLOCK_HZ / 4;
 const FRAME_CYCLES = 70_224;
+const FRAME_MILLISECONDS = FRAME_CYCLES / CLOCK_HZ * 1000;
 const DIRECTION_KEYS = { KeyD: 1, KeyA: 2, KeyW: 4, KeyS: 8 };
 const ACTION_KEYS = { KeyK: 1, KeyJ: 2, KeyU: 4, KeyI: 8 };
 
@@ -20,7 +19,6 @@ export class EmulationLoop {
     this.action = 0;
     this.directionPending = 0;
     this.actionPending = 0;
-    this.pendingCycles = 0;
     this.completedFrames = 0;
     this.loopHandle = null;
     this.loopTick = this.tick.bind(this);
@@ -28,8 +26,7 @@ export class EmulationLoop {
   }
 
   resetClock() {
-    this.startTime = this.now();
-    this.elapsedCycles = 0;
+    this.nextFrameTime = this.now();
   }
 
   setThrottle(enabled) {
@@ -42,7 +39,6 @@ export class EmulationLoop {
   setInput(directionPressed, actionPressed) {
     this.direction = directionPressed & 15;
     this.action = actionPressed & 15;
-    if ((this.direction & ~this.directionPending) || (this.action & ~this.actionPending)) this.pendingCycles = 0;
     this.directionPending |= this.direction;
     this.actionPending |= this.action;
   }
@@ -58,7 +54,6 @@ export class EmulationLoop {
 
   releaseInputs() {
     this.direction = this.action = this.directionPending = this.actionPending = 0;
-    this.pendingCycles = 0;
   }
 
   inputMasks() {
@@ -66,7 +61,7 @@ export class EmulationLoop {
   }
 
   clearPending() {
-    this.directionPending = this.actionPending = this.pendingCycles = 0;
+    this.directionPending = this.actionPending = 0;
   }
 
   sendFrame(frameCount) {
@@ -81,7 +76,7 @@ export class EmulationLoop {
     }
   }
 
-  runUnthrottledFrame() {
+  runFrame() {
     const frames = this.adapter.runFrame(...this.inputMasks());
     this.completedFrames += frames;
     // Even an LCD-off fallback advances a frame's CPU time.
@@ -91,23 +86,13 @@ export class EmulationLoop {
   }
 
   runThrottled() {
-    const realCycles = (this.now() - this.startTime) * CLOCK_HZ / 1000;
-    const targetCycles = Math.min(realCycles, this.elapsedCycles + MAX_CATCHUP_CYCLES);
-    let frames = 0;
-    while (targetCycles > this.elapsedCycles) {
-      const remainingCycles = Math.floor(targetCycles - this.elapsedCycles);
-      if (remainingCycles <= 0) break;
-      const cycles = Math.min(remainingCycles, MAX_CYCLES_PER_STEP);
-      const completed = this.adapter.runCycles(cycles, ...this.inputMasks());
-      frames += completed;
-      this.completedFrames += completed;
-      // A short press survives partial-frame cycle budgets until a full frame.
-      this.pendingCycles += cycles;
-      if (completed > 0 || this.pendingCycles >= FRAME_CYCLES) this.clearPending();
-      this.drainAudio();
-      this.elapsedCycles += cycles;
-    }
-    if (frames > 0) this.sendFrame(frames);
+    const now = this.now();
+    if (now < this.nextFrameTime) return;
+    // A delayed timer must not create a batch of invisible catch-up frames.
+    if (now - this.nextFrameTime >= FRAME_MILLISECONDS) this.nextFrameTime = now;
+    this.runFrame();
+    // Include computation in the frame interval. A slow core needs no extra wait.
+    this.nextFrameTime = Math.max(this.nextFrameTime + FRAME_MILLISECONDS, this.now());
   }
 
   start() {
@@ -129,12 +114,13 @@ export class EmulationLoop {
     if (!this.running) return;
     try {
       if (this.throttleEnabled) this.runThrottled();
-      else this.runUnthrottledFrame();
+      else this.runFrame();
     } catch (error) {
       this.stop();
       this.emit({ type: 'error', message: error.message });
       return;
     }
-    this.loopHandle = this.schedule(this.loopTick, 0);
+    const delay = this.throttleEnabled ? Math.ceil(Math.max(0, this.nextFrameTime - this.now())) : 0;
+    this.loopHandle = this.schedule(this.loopTick, delay);
   }
 }

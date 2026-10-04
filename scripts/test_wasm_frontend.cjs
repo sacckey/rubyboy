@@ -6,9 +6,10 @@ const path = require('node:path');
 const vm = require('node:vm');
 const docs = path.resolve(__dirname, '../docs');
 
-function loopHarness(EmulationLoop, frameResult = 1) {
+const FRAME_MS = 70224 / 4194304 * 1000;
+
+function loopHarness(EmulationLoop, frameResult = 1, {frameMs = 0, timerTurnaround = 0} = {}) {
   let time = 0;
-  let cycleRemainder = 0;
   let nextTimer = 0;
   let audioDrains = 0;
   const timers = new Map();
@@ -16,84 +17,120 @@ function loopHarness(EmulationLoop, frameResult = 1) {
   const messages = [];
   const frames = [];
   const adapter = {
-    runFrame(direction, action) { calls.push({ direction, action }); return frameResult; },
-    runCycles(cycles, direction, action) {
-      calls.push({ cycles, direction, action });
-      cycleRemainder += cycles;
-      const completed = Math.floor(cycleRemainder / 70224);
-      cycleRemainder %= 70224;
-      return completed;
+    runFrame(direction, action) {
+      calls.push({direction, action, startedAt: time});
+      time += frameMs;
+      return frameResult;
     },
+    runCycles() { throw new Error('Presentation throttling must not split frames into cycle batches'); },
     framebuffer() { const buffer = new ArrayBuffer(160 * 144 * 4); frames.push(buffer); return buffer; },
     popAudio() { audioDrains++; return new Float32Array([.25, -.25]).buffer; },
   };
-  const loop = new EmulationLoop(adapter, (message, transfers) => messages.push({ message, transfers }), {
+  const loop = new EmulationLoop(adapter, (message, transfers) => messages.push({message, transfers}), {
     now: () => time,
-    setTimeout: (callback) => { timers.set(++nextTimer, callback); return nextTimer; },
+    setTimeout: (callback, delay) => { timers.set(++nextTimer, {callback, delay}); return nextTimer; },
     clearTimeout: handle => timers.delete(handle),
   });
+  function advance(now) {
+    time = now;
+    const [handle, task] = timers.entries().next().value;
+    timers.delete(handle);
+    task.callback();
+  }
   return {
     loop, adapter, calls, messages, frames, timers,
     drains: () => audioDrains,
-    advance(now) {
-      time = now;
-      const [handle, callback] = timers.entries().next().value;
-      timers.delete(handle);
-      callback();
-    },
+    now: () => time,
+    nextDelay: () => timers.values().next().value.delay,
+    advance,
+    runNext() { advance(time + Math.max(timerTurnaround, timers.values().next().value.delay)); },
   };
 }
 
 function testClock(EmulationLoop) {
-  const normal = loopHarness(EmulationLoop);
-  normal.loop.start();
-  normal.loop.start();
-  assert.equal(normal.timers.size, 1, 'start is idempotent');
-  assert.equal(normal.calls.length, 0, 'no CPU cycles before wall time advances');
-  normal.advance(1000);
-  assert.equal(normal.calls.reduce((sum, call) => sum + call.cycles, 0), 4194304 / 4, 'catch-up is limited to 250ms at the exact CPU frequency');
-  assert.ok(normal.calls.every(call => call.cycles <= 32768), 'cycle chunks are bounded');
-  assert.equal(normal.messages.filter(item => item.message.type === 'pixelData').length, 1, 'normal catch-up sends the latest completed frame once');
-  assert.equal(normal.messages.filter(item => item.message.type === 'audioData').length, 0, 'muted is the default');
-  assert.equal(normal.drains(), normal.calls.length, 'muted audio is still drained after every CPU chunk');
-  normal.loop.stop();
-  assert.equal(normal.timers.size, 0, 'stop cancels the loop');
-  const coalesced = loopHarness(EmulationLoop);
-  coalesced.loop.start();
-  coalesced.advance(50.5);
-  const coalescedPixels = coalesced.messages.filter(item => item.message.type === 'pixelData');
-  assert.equal(coalescedPixels.length, 1, 'three completed PPU frames share one normal presentation');
-  assert.equal(coalescedPixels[0].message.frameCount, 3, 'packet records completed frames independently of display arrivals');
-  assert.equal(coalescedPixels[0].message.completedFrames, 3, 'packet records cumulative completed frames');
-  coalesced.loop.stop();
-  const unlimited = loopHarness(EmulationLoop);
+  const fast = loopHarness(EmulationLoop, 1, {frameMs: 2});
+  fast.loop.start();
+  fast.loop.start();
+  assert.equal(fast.timers.size, 1, 'start is idempotent');
+  assert.equal(fast.calls.length, 1, 'the first frame is presented immediately');
+  assert.equal(fast.nextDelay(), Math.ceil(FRAME_MS - 2), 'execution time is included in the frame interval');
+  fast.advance(10);
+  assert.equal(fast.calls.length, 1, 'an early timer must not run Ruby');
+  assert.equal(fast.drains(), 1);
+  fast.advance(FRAME_MS);
+  assert.equal(fast.calls.length, 2);
+  for (let i = 0; i < 240; i++) fast.runNext();
+  const rate = (fast.calls.length - 1) * 1000 / (fast.calls.at(-1).startedAt - fast.calls[0].startedAt);
+  assert.ok(rate > 59 && rate <= 60, `fast adapters are capped near the Game Boy frame rate: ${rate}`);
+  const fastPixels = fast.messages.filter(item => item.message.type === 'pixelData');
+  assert.equal(fastPixels.length, fast.calls.length);
+  assert.ok(fastPixels.every(item => item.message.frameCount === 1), 'every calculated frame is presented');
+  assert.equal(fast.messages.filter(item => item.message.type === 'audioData').length, 0, 'mute is the default');
+  assert.equal(fast.drains(), fast.calls.length, 'audio is drained once per frame');
+  fast.loop.stop();
+  assert.equal(fast.timers.size, 0, 'stop cancels the loop');
+
+  const paused = loopHarness(EmulationLoop, 1, {frameMs: 2});
+  paused.loop.start();
+  paused.advance(1000);
+  assert.equal(paused.calls.length, 2, 'a one-second timer pause runs one frame, without catching up');
+  assert.equal(paused.nextDelay(), Math.ceil(FRAME_MS - 2), 'pause recovery resumes ordinary pacing');
+  paused.loop.stop();
+  paused.loop.start();
+  assert.equal(paused.calls.length, 3, 'restart resets the deadline instead of replaying elapsed time');
+  paused.loop.stop();
+
+  const slow = loopHarness(EmulationLoop, 1, {frameMs: 28, timerTurnaround: 4});
+  const unlimited = loopHarness(EmulationLoop, 1, {frameMs: 28, timerTurnaround: 4});
   unlimited.loop.setThrottle(false);
-  unlimited.loop.setMuted(false);
+  slow.loop.start();
   unlimited.loop.start();
-  assert.equal(unlimited.calls.length, 1, 'unlimited runs one completed-frame call per task');
-  unlimited.advance(0);
-  assert.equal(unlimited.calls.length, 2);
+  for (let i = 0; i < 100; i++) {
+    assert.equal(slow.nextDelay(), 0, 'a frame slower than the limit incurs no extra wait');
+    const before = slow.calls.length;
+    slow.runNext();
+    unlimited.runNext();
+    assert.equal(slow.calls.length, before + 1, 'slow hosts yield after every frame');
+  }
+  assert.equal(slow.calls.length, unlimited.calls.length);
+  assert.equal(slow.now(), unlimited.now(), 'limited slow hosts have the same throughput as unlimited hosts');
+  assert.equal(slow.messages.filter(item => item.message.type === 'pixelData').length, slow.calls.length);
   const packet = unlimited.messages.find(item => item.message.type === 'pixelData');
-  assert.equal(packet.message.data, unlimited.frames[0], 'adapter buffers are transferred without an extra copy');
+  assert.equal(packet.message.data, unlimited.frames[0]);
   assert.equal(packet.transfers[0], packet.message.data);
   assert.equal(packet.message.frameCount, 1);
   assert.equal(packet.message.completedFrames, 1);
-  assert.equal(unlimited.messages.filter(item => item.message.type === 'audioData').length, 2);
+  slow.loop.stop();
   unlimited.loop.stop();
+
+  const toggled = loopHarness(EmulationLoop);
+  toggled.loop.setMuted(false);
+  toggled.loop.start();
+  toggled.loop.setThrottle(false);
+  toggled.advance(1);
+  assert.equal(toggled.calls.length, 2, 'switching off the limit permits the next task');
+  assert.equal(toggled.nextDelay(), 0);
+  toggled.loop.setThrottle(true);
+  toggled.advance(2);
+  assert.equal(toggled.calls.length, 3, 'switching on resets the deadline');
+  assert.equal(toggled.messages.filter(item => item.message.type === 'audioData').length, 3);
+  toggled.advance(3);
+  assert.equal(toggled.calls.length, 3, 'subsequent limited tasks respect the new deadline');
+  toggled.loop.stop();
+
   const lcdOff = loopHarness(EmulationLoop, 0);
-  lcdOff.loop.setThrottle(false);
   lcdOff.loop.updateInput('KeyI', true);
   lcdOff.loop.updateInput('KeyI', false);
   lcdOff.loop.start();
-  lcdOff.advance(0);
+  lcdOff.runNext();
   assert.equal(lcdOff.calls[0].action, 7);
-  assert.equal(lcdOff.calls[1].action, 15, 'LCD-off fallback clears a one-frame input latch');
-  assert.equal(lcdOff.messages.filter(item => item.message.type === 'pixelData').length, 2, 'LCD-off fallback still presents once per unlimited task');
-  assert.equal(lcdOff.messages.find(item => item.message.type === 'pixelData').message.frameCount, 0, 'LCD-off presentation does not count a completed PPU frame');
+  assert.equal(lcdOff.calls[1].action, 15, 'LCD-off fallback clears the one-frame input latch');
+  assert.equal(lcdOff.messages.filter(item => item.message.type === 'pixelData').length, 2);
+  assert.equal(lcdOff.messages.find(item => item.message.type === 'pixelData').message.frameCount, 0);
   lcdOff.loop.stop();
+
   const failed = loopHarness(EmulationLoop);
   failed.adapter.runFrame = () => { throw new Error('emulator failed'); };
-  failed.loop.setThrottle(false);
   failed.loop.start();
   assert.equal(failed.loop.running, false);
   assert.equal(failed.timers.size, 0);
@@ -102,15 +139,15 @@ function testClock(EmulationLoop) {
 
 function testInput(EmulationLoop) {
   const shortPress = loopHarness(EmulationLoop);
+  shortPress.loop.start();
   shortPress.loop.updateInput('KeyI', true);
   shortPress.loop.updateInput('KeyI', false);
-  shortPress.loop.start();
   shortPress.advance(10);
-  assert.ok(shortPress.calls.every(call => call.action === 7), 'quick Start press remains active through partial frames');
-  const before = shortPress.calls.length;
-  shortPress.advance(20);
-  assert.equal(shortPress.calls[before].action, 7);
-  assert.equal(shortPress.calls.at(-1).action, 15, 'latch clears after a completed frame');
+  assert.equal(shortPress.calls.length, 1, 'a short press survives waiting for the next frame');
+  shortPress.runNext();
+  assert.equal(shortPress.calls[1].action, 7);
+  shortPress.runNext();
+  assert.equal(shortPress.calls[2].action, 15, 'the latch clears after the next frame');
   shortPress.loop.updateInput('KeyK', true);
   assert.equal(shortPress.loop.inputMasks()[1], 14, 'K remains Game Boy A');
   shortPress.loop.updateInput('KeyJ', true);
@@ -118,15 +155,6 @@ function testInput(EmulationLoop) {
   shortPress.loop.releaseInputs();
   assert.deepEqual(shortPress.loop.inputMasks(), [15, 15]);
   shortPress.loop.stop();
-  const lcdOff = loopHarness(EmulationLoop);
-  lcdOff.adapter.runCycles = (cycles, direction, action) => { lcdOff.calls.push({cycles, direction, action}); return 0; };
-  lcdOff.loop.updateInput('KeyI', true);
-  lcdOff.loop.updateInput('KeyI', false);
-  lcdOff.loop.start();
-  lcdOff.advance(100);
-  assert.equal(lcdOff.calls[0].action, 7);
-  assert.equal(lcdOff.calls.at(-1).action, 15, 'normal LCD-off execution does not retain released input forever');
-  lcdOff.loop.stop();
 }
 
 function testWorklet() {
@@ -331,5 +359,5 @@ async function testIndex() {
   testInput(EmulationLoop);
   testWorklet();
   await testIndex();
-  console.log('Wasm frontend tests passed: exact clock/catch-up, normal/unlimited, input latch and sources, audio transfer/ring/resampling, live playback toggles and startup race, URL defaults and upload race.');
+  console.log('Wasm frontend tests passed: frame pacing and slow-host throughput, normal/unlimited, input latch and sources, audio transfer/ring/resampling, live playback toggles and startup race, URL defaults and upload race.');
 })().catch(error => { console.error(error); process.exitCode = 1; });

@@ -77,12 +77,14 @@ playback after generating and consuming the APU samples; it does not skip APU
 emulation. `mute=0` also permits audio in unlimited mode, but audio is generated
 faster than real time, so that combination is not normal-speed playback.
 
-Normal mode schedules against 4,194,304 T-cycles per second, with at most 250 ms
-of catch-up per task. Each budget is at most 32,768 T-cycles (8,192 M-cycles).
-CPU instructions cannot be split, so the Ruby adapter
-carries instruction overshoot into the next budget. Unlimited mode executes
-one frame per task. LCD-disabled execution returns after one frame's CPU time
-so the worker can accept further input.
+Both modes execute and present one frame-step per worker task. Normal mode
+paces tasks at `70,224 / 4,194,304` seconds per frame (about 59.73 FPS), including
+emulation and buffer processing in that interval. It waits only when the frame
+finishes early. If the core is slower, the next task runs without an additional
+wait. A delayed timer or slow core does not accumulate a batch of hidden
+catch-up frames; game time advances at the available processing speed.
+Unlimited mode removes the deadline. LCD-disabled execution remains bounded by
+one frame's CPU time so the worker can accept further input.
 
 Completed 512-frame stereo APU blocks are packed as little-endian Float32.
 The worklet holds at most 2,048 stereo frames and resamples 48 kHz input if the
@@ -248,15 +250,14 @@ scaling, scheduler and transfer policy. Report the actual Ruby VM version and
 Wasm/compiler identities as well.
 
 The visible FPS counter retains its existing meaning: received/drawn images
-in the last second. Catch-up can process several frames and send only the last
-image, so this counter is not processing FPS. `pixelData.frameCount` and
+in the last second. Each worker task now presents the frame-step it computes.
+The display counter still measures message arrivals rather than a timed core benchmark. `pixelData.frameCount` and
 `pixelData.completedFrames` separately report emulated frame counts. Use those
 counts and elapsed time for processing throughput; do not infer a compiler
 speedup from the visible counter. Recording adds work, so time benchmarks
 separately from recordings.
 
-In normal mode the processing counter counts completed PPU frames. Unlimited
-mode counts bounded frame-step calls, including an LCD-off CPU-time fallback.
+Both modes count bounded frame-step calls, including an LCD-off CPU-time fallback.
 Use the same mode and frame-count definition for both builds, especially with
 ROMs that temporarily disable their LCD.
 
