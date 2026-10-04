@@ -1,21 +1,75 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-case ARGV[0]
-when 'build'
-  command = %w[build --ruby-version 3.4 -o ./docs/ruby-js.wasm]
-when 'pack'
+case ARGV
+when ['build']
+  command = %w[build --ruby-version 4.0.7 -o ./docs/ruby-js.wasm]
+when ['pack'], ['pack', '--keep-debug']
   command = %w[pack ./docs/ruby-js.wasm --dir ./lib::/lib -o ./docs/rubyboy.wasm]
 else
-  puts "Invalid argument. Use 'build' or 'pack'."
+  puts "Invalid argument. Use 'build' or 'pack [--keep-debug]'."
   exit 1
 end
 
 ENV['BUNDLE_ONLY'] = 'wasm'
+ENV['BUNDLE_IGNORE_CONFIG'] = '1'
 
 require 'bundler/setup'
+require 'digest'
+require 'fileutils'
+require 'tempfile'
+require 'tmpdir'
 require 'ruby_wasm'
 require 'ruby_wasm/cli'
+
+# The toolkit's 4.0 alias still uses Ruby 4.0.0. Build the pinned stable source
+# with its 4.0 extensions and SDK, using separate caches for Ruby 4.0.7.
+class RubyboyWasmCLI < RubyWasm::CLI
+  RUBY_SOURCE_VERSION = '4.0.7'
+  RUBY_SOURCE_URL = 'https://cache.ruby-lang.org/pub/ruby/4.0/ruby-4.0.7.tar.gz'
+  RUBY_SOURCE_SHA256 = '911ace20f90d068ca0e4dda6d0e4f0f81e52e52f2dd4f4004c721e253412e82d'
+
+  def self.build_config_aliases(root)
+    aliases = super
+    aliases[RUBY_SOURCE_VERSION] = aliases.fetch('4.0').merge(
+      name: RUBY_SOURCE_VERSION,
+      src: {
+        name: RUBY_SOURCE_VERSION,
+        type: 'local',
+        path: prepare_ruby_source(root),
+        patches: []
+      }
+    )
+    aliases
+  end
+
+  def self.prepare_ruby_source(root)
+    cache_dir = File.join(root, 'build', 'sources')
+    archive = File.join(cache_dir, "ruby-#{RUBY_SOURCE_VERSION}.tar.gz")
+    source_dir = File.join(cache_dir, "ruby-#{RUBY_SOURCE_VERSION}")
+    FileUtils.mkdir_p(cache_dir)
+
+    unless File.file?(archive) && Digest::SHA256.file(archive).hexdigest == RUBY_SOURCE_SHA256
+      Tempfile.create(['ruby-source-', '.tar.gz'], cache_dir) do |download|
+        system('curl', '-fL', '--retry', '3', '-o', download.path, RUBY_SOURCE_URL, exception: true)
+        raise "Ruby #{RUBY_SOURCE_VERSION} source checksum mismatch" unless Digest::SHA256.file(download.path).hexdigest == RUBY_SOURCE_SHA256
+
+        FileUtils.mv(download.path, archive)
+      end
+    end
+    return source_dir if File.file?(File.join(source_dir, 'configure'))
+
+    staging_dir = Dir.mktmpdir('ruby-source-', cache_dir)
+    begin
+      system('tar', '-xzf', archive, '-C', staging_dir, '--strip-components=1', exception: true)
+      FileUtils.rm_rf(source_dir)
+      FileUtils.mv(staging_dir, source_dir)
+    ensure
+      FileUtils.rm_rf(staging_dir)
+    end
+    source_dir
+  end
+end
 
 # Exclude all gems except the 'js' gem for packaging
 definition = Bundler.definition
@@ -23,4 +77,18 @@ excluded_gems = definition.resolve.materialize(definition.requested_dependencies
 excluded_gems -= %w[js]
 RubyWasm::Packager::EXCLUDED_GEMS.concat(excluded_gems)
 
-RubyWasm::CLI.new(stdout: $stdout, stderr: $stderr).run(command)
+RubyboyWasmCLI.new(stdout: $stdout, stderr: $stderr).run(command)
+
+# Keep executable sections unchanged while removing unused C debug information.
+# The SDK is installed by the build command; --keep-debug retains the full module.
+if ARGV == ['pack']
+  build_root = File.expand_path(ENV['RUBY_WASM_ROOT'] || Bundler.root.to_s)
+  objcopy = File.join(build_root, 'build', 'toolchain', 'wasi-sdk-24.0', 'bin', 'llvm-objcopy')
+  raise "WASI SDK 24.0 is missing; run 'ruby exe/rubyboy-wasm build' first or use 'pack --keep-debug'" unless File.executable?(objcopy)
+
+  wasm_path = './docs/rubyboy.wasm'
+  Tempfile.create(['rubyboy-', '.wasm'], File.dirname(wasm_path)) do |output|
+    system(objcopy, '--strip-debug', wasm_path, output.path, exception: true)
+    FileUtils.mv(output.path, wasm_path)
+  end
+end

@@ -18,6 +18,6 @@ group :development, :test do
 end
 
 group :wasm do
-  gem 'js', '2.7.1'
-  gem 'ruby_wasm', '2.7.1'
+  gem 'js', '2.10.1'
+  gem 'ruby_wasm', '2.10.1'
 end
