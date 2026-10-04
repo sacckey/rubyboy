@@ -1,115 +1,81 @@
 import { DefaultRubyVM } from 'https://cdn.jsdelivr.net/npm/@ruby/wasm-wasi@2.7.1/dist/browser/+esm';
-import { File } from 'https://cdn.jsdelivr.net/npm/@bjorn3/browser_wasi_shim@0.3.0/+esm';
-
-const DIRECTION_KEY_MASKS = {
-  'KeyD': 0b0001, // Right
-  'KeyA': 0b0010, // Left
-  'KeyW': 0b0100, // Up
-  'KeyS': 0b1000  // Down
-};
-
-const ACTION_KEY_MASKS = {
-  'KeyK': 0b0001, // A
-  'KeyJ': 0b0010, // B
-  'KeyU': 0b0100, // Select
-  'KeyI': 0b1000  // Start
-};
+import { File, Directory } from 'https://cdn.jsdelivr.net/npm/@bjorn3/browser_wasi_shim@0.3.0/+esm';
+import { EmulationLoop } from './emulation-loop.js';
+import { RubyboyVM, mountCore } from './rubyboy-vm.js';
 
 class Rubyboy {
   constructor() {
     this.wasmUrl = 'https://proxy.sacckey.dev/rubyboy.wasm';
-
-    this.directionKey = 0b1111;
-    this.actionKey = 0b1111;
+    this.adapter = null;
+    this.loop = null;
+    this.requestId = 0;
+    this.initializing = null;
   }
 
   async init() {
+    // Keep the existing local-first download and proxy fallback.
     let response = await fetch('./rubyboy.wasm');
     if (!response.ok) {
       response = await fetch(this.wasmUrl);
     }
-
-    const module = await WebAssembly.compileStreaming(response)
+    const module = await WebAssembly.compileStreaming(response);
     const { vm, wasi } = await DefaultRubyVM(module);
-    vm.eval(`
-      require 'js'
-      require_relative 'lib/executor'
-
-      $executor = Executor.new
-    `);
-
-    this.vm = vm;
-    this.rootDir = wasi.fds[3].dir
+    const sources = await fetch('./rubyboy-core.json');
+    if (!sources.ok) throw new Error('Ruby source bundle is missing. Run scripts/build-browser-core.rb.');
+    const bundle = await sources.json();
+    await mountCore(wasi.fds[3].dir, bundle, { File, Directory });
+    this.adapter = new RubyboyVM(vm, wasi.fds[3].dir, File);
+    this.loop = new EmulationLoop(this.adapter, (message, transfers) => {
+      postMessage({ ...message, requestId: this.requestId }, transfers);
+    });
+    return {
+      ruby: vm.eval('RUBY_DESCRIPTION').toString(),
+      apiVersion: bundle.api_version,
+      sourceHashes: Object.fromEntries(bundle.files.map(file => [file.path, file.sha256])),
+    };
   }
 
-  sendPixelData() {
-    this.vm.eval(`$executor.exec(${this.directionKey}, ${this.actionKey})`);
-
-    const file = this.rootDir.contents.get('video.data');
-    const bytes = file.data;
-
-    postMessage({ type: 'pixelData', data: bytes.buffer }, [bytes.buffer]);
+  async ensureInitialized() {
+    if (!this.initializing) this.initializing = this.init();
+    return this.initializing;
   }
 
-  emulationLoop() {
-    this.sendPixelData();
-    setTimeout(this.emulationLoop.bind(this), 0);
+  load(data) {
+    this.loop.stop();
+    if (data.type === 'loadROM') this.adapter.loadUploadedRom(data.data);
+    else this.adapter.loadPreInstalledRom(data.romName);
+    this.requestId = data.requestId ?? this.requestId + 1;
+    this.loop.completedFrames = 0;
+    postMessage({ type: 'romLoaded', requestId: this.requestId });
+    this.loop.start();
   }
 }
 
 const rubyboy = new Rubyboy();
+const handlers = {
+  async initRubyboy() {
+    const runtime = await rubyboy.ensureInitialized();
+    postMessage({ type: 'initialized', runtime });
+  },
+  startRubyboy() { rubyboy.loop.start(); },
+  stopRubyboy() { rubyboy.loop.stop(); },
+  setThrottle(data) { rubyboy.loop.setThrottle(data.enabled); },
+  setMute(data) { rubyboy.loop.setMuted(data.enabled); },
+  input(data) { rubyboy.loop.setInput(data.direction, data.action); },
+  releaseInputs() { rubyboy.loop.releaseInputs(); },
+  keydown(data) { rubyboy.loop.updateInput(data.code, true); },
+  keyup(data) { rubyboy.loop.updateInput(data.code, false); },
+  loadROM(data) { rubyboy.load(data); },
+  loadPreInstalledRom(data) { rubyboy.load(data); },
+};
 
-self.addEventListener('message', async (event) => {
-  if (event.data.type === 'initRubyboy') {
-    try {
-      await rubyboy.init();
-      postMessage({ type: 'initialized', message: 'ok' });
-    } catch (error) {
-      postMessage({ type: 'error', message: error.message });
-    }
-  }
-
-  if (event.data.type === 'startRubyboy') {
-    try {
-      rubyboy.emulationLoop();
-    } catch (error) {
-      postMessage({ type: 'error', message: error.message });
-    }
-  }
-
-  if (event.data.type === 'keydown' || event.data.type === 'keyup') {
-    const code = event.data.code;
-    const directionKeyMask = DIRECTION_KEY_MASKS[code];
-    const actionKeyMask = ACTION_KEY_MASKS[code];
-
-    if (directionKeyMask) {
-      if (event.data.type === 'keydown') {
-        rubyboy.directionKey &= ~directionKeyMask;
-      } else {
-        rubyboy.directionKey |= directionKeyMask;
-      }
-    }
-
-    if (actionKeyMask) {
-      if (event.data.type === 'keydown') {
-        rubyboy.actionKey &= ~actionKeyMask;
-      } else {
-        rubyboy.actionKey |= actionKeyMask;
-      }
-    }
-  }
-
-  if (event.data.type === 'loadROM') {
-    const romFile = new File(new Uint8Array(event.data.data));
-    rubyboy.rootDir.contents.set('rom.data', romFile);
-    rubyboy.vm.eval(`
-      $executor.read_rom_from_virtual_fs
-    `);
-  }
-
-  if (event.data.type === 'loadPreInstalledRom') {
-    rubyboy.vm.eval(`
-      $executor.read_pre_installed_rom("${event.data.romName}")
-    `);
-  }
+// Initial VM creation and ROM changes must finish before later messages run.
+let messages = Promise.resolve();
+self.addEventListener('message', ({ data }) => {
+  const handler = handlers[data.type];
+  if (!handler) return;
+  messages = messages.then(() => handler(data)).catch((error) => {
+    rubyboy.loop?.stop();
+    postMessage({ type: 'error', requestId: data.requestId ?? rubyboy.requestId, message: error.message });
+  });
 });

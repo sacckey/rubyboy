@@ -103,6 +103,29 @@ the monitor. Measure performance without recording, then use a separate
 `--render --count 1` run for a reference recording. Preserve elapsed real time
 when converting the recording to GIF so that speed differences remain visible.
 
+## Browser playback (ruby.wasm)
+
+The existing browser UI uses a worker for emulation and an AudioWorklet for
+sound. Use the **Limit to 60 FPS** and **Mute** checkboxes in **Performance** to
+change playback while running. Both are checked by default. URL parameters set
+their initial state: `?throttle=0&mute=1` for unlimited, muted playback, or
+`?throttle=1&mute=0` for normal playback with sound after the first interaction.
+The APU continues to run in all modes.
+
+The large Wasm download remains local-first with the existing proxy fallback;
+Wasm files remain excluded from Git. A generated text bundle supplies the
+current Ruby sources separately, so an older downloaded module cannot silently
+provide an older emulator implementation. Regenerate it after changing browser
+core code:
+
+```sh
+ruby scripts/build-browser-core.rb
+python3 -m http.server 8765 --bind 127.0.0.1 --directory docs
+```
+
+See [browser playback and verification](docs/wasm-playback.md) for the source
+bundle, verification commands and comparison conditions.
+
 ## Contributing
 
 Bug reports and pull requests are welcome on GitHub at https://github.com/sacckey/rubyboy. This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [code of conduct](https://github.com/sacckey/rubyboy/blob/main/CODE_OF_CONDUCT.md).
