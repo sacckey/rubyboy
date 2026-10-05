@@ -56,10 +56,12 @@ level. A browser supporting standardized Wasm exception handling is required.
   asset paths adjusted; the visible UI is shared.
 - `docs/spinel/build-info.json`: compiler identities and source/artifact hashes.
 
-These outputs are ignored by Git. ROMs are mounted read-only from the Wasm's
-file section: no deployed ROM copies or separate ROM downloads are needed.
-Deploy the whole `docs/` tree including generated assets. Rebuild when root HTML
-or Spinel changes. The host uses the same pinned `browser_wasi_shim` 0.4.2 CDN
+The generated HTML and generic JavaScript host are committed so GitHub Pages
+can serve `/rubyboy/spinel/` directly from `main` and `docs/`. Commit their
+updated copies when rebuilding after root HTML or Spinel changes. Wasm binaries
+and `build-info.json` remain ignored by Git; publish the packed Wasm as a GitHub
+Release asset for the proxy fallback. ROMs are mounted read-only from the Wasm's
+file section: no deployed ROM copies or separate ROM downloads are needed. The host uses the same pinned `browser_wasi_shim` 0.4.2 CDN
 module as the normal version. Retain the full source changes when reproducing
 an uncommitted build; a base Git revision alone does not identify those changes.
 

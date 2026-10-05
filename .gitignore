@@ -18,7 +18,5 @@
 # rspec failure tracking
 .rspec_status
 
-# Generated Spinel browser assets
-/docs/spinel/index.html
+# Local Spinel build metadata (Wasm binaries are ignored above)
 /docs/spinel/build-info.json
-/docs/spinel/spinel-vm.mjs
