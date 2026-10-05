@@ -33,6 +33,10 @@ python3 -m http.server 8765 --bind 127.0.0.1 --directory docs
 
 Open **http://127.0.0.1:8765/spinel/**. Under GitHub Pages the path is
 `/rubyboy/spinel/`. The root page continues to use packed `rubyboy.wasm`.
+The Spinel worker first tries local `./rubyboy-spinel.wasm`, then falls back to
+`https://proxy.sacckey.dev/rubyboy-spinel.wasm` when the local response fails.
+To use the proxy, upload the packed `rubyboy-spinel.wasm` as a GitHub Release
+asset alongside the normal `rubyboy.wasm`.
 `?throttle=0&mute=1` starts either version in unlimited, muted mode.
 
 WASI SDK archives are available from the official
@@ -44,8 +48,8 @@ level. A browser supporting standardized Wasm exception handling is required.
 
 ## Generated assets
 
-- `build/spinel-wasm/rubyboy.wasm`: compiled Executor and generic host ABI.
-- `docs/spinel/rubyboy.wasm`: that module with the original `lib/roms` files
+- `build/spinel-wasm/rubyboy-spinel.wasm`: compiled Executor and generic host ABI.
+- `docs/spinel/rubyboy-spinel.wasm`: that module with the original `lib/roms` files
   embedded by Spinel's generic `scripts/wasm-pack.py`.
 - `docs/spinel/spinel-vm.mjs`: an unmodified copy of Spinel's generic host.
 - `docs/spinel/index.html`: generated from the existing root HTML with relative

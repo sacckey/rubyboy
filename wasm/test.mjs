@@ -14,7 +14,7 @@ const native = spawnSync(process.env.RUBY || 'ruby', ['scripts/wasm_reference.rb
 });
 assert.equal(native.status, 0, native.stderr);
 const reference = JSON.parse(native.stdout);
-const bytes = readFileSync('docs/spinel/rubyboy.wasm');
+const bytes = readFileSync('docs/spinel/rubyboy-spinel.wasm');
 const module = await WebAssembly.compile(bytes);
 assert(WebAssembly.Module.imports(module).every(entry => entry.module === 'wasi_snapshot_preview1'));
 const { vm, root } = await createSpinelVM(module, { shim });

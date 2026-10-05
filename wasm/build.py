@@ -45,9 +45,9 @@ def main():
     run([compiler, '-O2', '--target=wasm32-wasi', '--cc=' + str(clang), '--no-line-map',
          '--ext', 'wasm', '--ext-init', 'Init_rubyboy_browser', '--ext-entry',
          ','.join('RubyboyBrowser.' + name for name in ENTRIES),
-         ROOT / 'wasm/spinel_main.rb', '-o', build / 'rubyboy.wasm'], env=environment, cwd=ROOT)
-    run(['python3', spinel / 'scripts/wasm-pack.py', build / 'rubyboy.wasm',
-         '--dir', str(ROOT / 'lib/roms') + '::/lib/roms', '-o', output / 'rubyboy.wasm'])
+         ROOT / 'wasm/spinel_main.rb', '-o', build / 'rubyboy-spinel.wasm'], env=environment, cwd=ROOT)
+    run(['python3', spinel / 'scripts/wasm-pack.py', build / 'rubyboy-spinel.wasm',
+         '--dir', str(ROOT / 'lib/roms') + '::/lib/roms', '-o', output / 'rubyboy-spinel.wasm'])
     # Distribute the generic host without keeping a separately maintained copy.
     host = spinel / 'lib/wasm/spinel-vm.mjs'
     shutil.copyfile(host, output / 'spinel-vm.mjs')
@@ -74,11 +74,11 @@ def main():
         'roms': [{'path': '/lib/roms/' + path.relative_to(ROOT / 'lib/roms').as_posix(),
                   'bytes': path.stat().st_size, 'sha256': digest(path)}
                  for path in sorted((ROOT / 'lib/roms').rglob('*')) if path.is_file()],
-        'wasm_bytes': (output / 'rubyboy.wasm').stat().st_size,
-        'wasm_sha256': digest(output / 'rubyboy.wasm'),
+        'wasm_bytes': (output / 'rubyboy-spinel.wasm').stat().st_size,
+        'wasm_sha256': digest(output / 'rubyboy-spinel.wasm'),
     }
     (output / 'build-info.json').write_text(json.dumps(metadata, indent=2) + '\n')
-    print(f"Built {output / 'rubyboy.wasm'}: {metadata['wasm_bytes']:,} bytes")
+    print(f"Built {output / 'rubyboy-spinel.wasm'}: {metadata['wasm_bytes']:,} bytes")
 
 
 if __name__ == '__main__':

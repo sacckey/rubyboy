@@ -4,8 +4,9 @@ import { RubyboyVM } from '../rubyboy-vm.js';
 import { startEmulationWorker } from '../emulation-worker.js';
 
 startEmulationWorker(async () => {
-  const response = await fetch(new URL('./rubyboy.wasm', import.meta.url));
-  if (!response.ok) throw new Error(`Wasm download failed (${response.status}). Build wasm/build.py first.`);
+  let response = await fetch(new URL('./rubyboy-spinel.wasm', import.meta.url));
+  if (!response.ok) response = await fetch('https://proxy.sacckey.dev/rubyboy-spinel.wasm');
+  if (!response.ok) throw new Error(`Wasm download failed (${response.status}).`);
   const module = await WebAssembly.compile(await response.arrayBuffer());
   const { vm, root } = await createSpinelVM(module, { shim });
   vm.call('RubyboyBrowser.init', '/lib/roms/tobu.gb');
