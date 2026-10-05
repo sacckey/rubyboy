@@ -8,6 +8,10 @@ A Game Boy emulator written in Ruby
 
 **[Try the demo in your browser!](https://sacckey.github.io/rubyboy/)** - Powered by WebAssembly
 
+The [Spinel version](https://sacckey.github.io/rubyboy/spinel/) uses the same UI
+with Ruby compiled to C and then to WebAssembly, without `ruby.wasm`.
+See [build instructions](wasm/README.md).
+
 ## Screenshots
 <div align="center">
   <img src="/resource/screenshots/pokemon.png" width="400px"/>

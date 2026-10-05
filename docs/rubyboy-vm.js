@@ -2,17 +2,18 @@
 const ROM_NAMES = new Set(['tobu.gb', 'bgbtest.gb']);
 
 export class RubyboyVM {
-  constructor(vm, root, File) {
+  constructor(vm, root, File, { executor, toValue } = {}) {
     this.vm = vm;
     this.root = root;
     this.File = File;
-    this.executor = vm.eval(`
+    this.toValue = toValue || (value => vm.eval(JSON.stringify(value)));
+    this.executor = executor || vm.eval(`
       require 'js'
       require '/lib/executor'
       $executor = Executor.new
     `);
-    this.inputValues = Array.from({ length: 16 }, (_, value) => vm.eval(String(value)));
-    this.fullBudget = vm.eval('32768');
+    this.inputValues = Array.from({ length: 16 }, (_, value) => this.toValue(value));
+    this.fullBudget = this.toValue(32768);
   }
 
   runFrame(direction, action) {
@@ -21,7 +22,7 @@ export class RubyboyVM {
 
   runCycles(cycles, direction, action) {
     if (!Number.isInteger(cycles) || cycles <= 0 || cycles > 32768) throw new Error('Invalid cycle budget.');
-    const budget = cycles === 32768 ? this.fullBudget : this.vm.eval(String(cycles));
+    const budget = cycles === 32768 ? this.fullBudget : this.toValue(cycles);
     return Number(this.executor.call('exec_cycles', budget, this.inputValues[direction], this.inputValues[action]).toString());
   }
 
@@ -60,7 +61,7 @@ export class RubyboyVM {
 
   loadPreInstalledRom(name) {
     if (!ROM_NAMES.has(name)) throw new Error('Unknown bundled ROM.');
-    this.executor.call('read_pre_installed_rom', this.vm.eval(JSON.stringify(name)));
+    this.executor.call('read_pre_installed_rom', this.toValue(name));
     this.clearOutputs();
   }
 }

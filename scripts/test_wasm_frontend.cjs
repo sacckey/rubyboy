@@ -185,7 +185,7 @@ function testWorklet() {
   assert.equal(resampled.readCursor, 139, '44.1kHz output resamples 48kHz source duration');
 }
 
-function indexHarness(search = '', {workletLoad = Promise.resolve()} = {}) {
+function indexHarness(search = '', {workletLoad = Promise.resolve(), documentUrl = 'http://example.test/rubyboy/'} = {}) {
   const messages = [];
   const documentListeners = {};
   const windowListeners = {};
@@ -207,8 +207,8 @@ function indexHarness(search = '', {workletLoad = Promise.resolve()} = {}) {
   const worker = {postMessage: message => messages.push(message)};
   class AudioContext {
     constructor(options) {
-      this.state = 'suspended'; this.options = options; this.resumes = 0; this.suspends = 0;
-      this.audioWorklet = {addModule: () => workletLoad}; audioContexts.push(this);
+      this.state = 'suspended'; this.options = options; this.resumes = 0; this.suspends = 0; this.modules = [];
+      this.audioWorklet = {addModule: url => { this.modules.push(String(url)); return workletLoad; }}; audioContexts.push(this);
     }
     resume() { this.resumes++; this.state = 'running'; return Promise.resolve(); }
     suspend() { this.suspends++; this.state = 'suspended'; return Promise.resolve(); }
@@ -218,9 +218,11 @@ function indexHarness(search = '', {workletLoad = Promise.resolve()} = {}) {
     connect() {}
   }
   const context = vm.createContext({
-    Worker: function() { return worker; }, URLSearchParams, Map, Promise, Uint8ClampedArray, AudioWorkletNode,
+    Worker: function(url, options) { worker.url = new URL(url, documentUrl).href; worker.options = {...options}; return worker; },
+    URL, URLSearchParams, Map, Promise, Uint8ClampedArray, AudioWorkletNode,
     window: { location: {search}, AudioContext, addEventListener(type, callback) { windowListeners[type] = callback; } },
     document: {
+      currentScript: {src: 'http://example.test/rubyboy/index.js'},
       getElementById: id => elements.get(id), querySelectorAll: () => buttons,
       createElement: () => ({getContext: () => canvasContext}),
       addEventListener(type, callback) { (documentListeners[type] ||= []).push(callback); },
@@ -229,6 +231,7 @@ function indexHarness(search = '', {workletLoad = Promise.resolve()} = {}) {
     ImageData: class {}, performance: {now: () => 0}, console,
   });
   vm.runInContext(fs.readFileSync(path.join(docs, 'index.js'), 'utf8'), context);
+  context.document.currentScript = null;
   function dispatch(type, event) { for (const listener of documentListeners[type] || []) listener(event); }
   function toggle(id, checked) {
     const element = elements.get(id);
@@ -239,6 +242,15 @@ function indexHarness(search = '', {workletLoad = Promise.resolve()} = {}) {
 }
 
 async function testIndex() {
+  for (const documentUrl of ['http://example.test/rubyboy/', 'http://example.test/rubyboy/spinel/']) {
+    const reused = indexHarness('', {documentUrl});
+    assert.equal(reused.worker.url, new URL('worker.js', documentUrl).href, 'the page selects its own backend worker');
+    assert.deepEqual(reused.worker.options, {type: 'module'});
+    reused.toggle('mute-toggle', false);
+    await new Promise(setImmediate);
+    assert.deepEqual(reused.audioContexts[0].modules, ['http://example.test/rubyboy/audio-worklet.js'],
+      'both pages load the shared worklet after currentScript becomes null');
+  }
   const normal = indexHarness();
   assert.equal(normal.elements.get('throttle-toggle').checked, true, 'throttle checkbox defaults to checked');
   assert.equal(normal.elements.get('mute-toggle').checked, true, 'mute checkbox defaults to checked');

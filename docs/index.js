@@ -1,3 +1,4 @@
+const assetBase = new URL('.', document.currentScript.src);
 const worker = new Worker('worker.js', { type: 'module' });
 const playbackOptions = new URLSearchParams(window.location.search);
 const throttleToggle = document.getElementById('throttle-toggle');
@@ -25,7 +26,7 @@ class AudioPlayer {
     // Resume from the first gesture before waiting for the worklet download.
     const resume = this.context.resume();
     if (!this.processor && !this.startingPromise) {
-      this.startingPromise = this.context.audioWorklet.addModule('./audio-worklet.js').then(() => {
+      this.startingPromise = this.context.audioWorklet.addModule(new URL('./audio-worklet.js', assetBase)).then(() => {
         this.processor = new AudioWorkletNode(this.context, 'rubyboy-audio-processor', {
           numberOfInputs: 0, numberOfOutputs: 1, outputChannelCount: [2],
         });

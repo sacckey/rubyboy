@@ -17,3 +17,8 @@
 
 # rspec failure tracking
 .rspec_status
+
+# Generated Spinel browser assets
+/docs/spinel/index.html
+/docs/spinel/build-info.json
+/docs/spinel/spinel-vm.mjs
