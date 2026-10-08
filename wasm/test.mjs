@@ -44,11 +44,9 @@ let frames = 0;
 let audioBytes = 0;
 for (let tick = 1; tick <= reference.ticks; tick++) {
   const [direction, action] = reference.inputs[tick - 1];
-  const blocks = [];
   frames += core.runFrame(direction, action);
   const block = core.popAudio();
-  if (block) blocks.push(Buffer.from(block));
-  const audio = Buffer.concat(blocks);
+  const audio = block ? Buffer.from(block) : Buffer.alloc(0);
   accumulated.push(audio);
   audioBytes += audio.length;
   assert.equal(core.popAudio(), null);

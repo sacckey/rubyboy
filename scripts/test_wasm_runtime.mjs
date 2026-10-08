@@ -50,11 +50,9 @@ let frames = 0;
 let audioBytes = 0;
 for (let tick = 1; tick <= reference.ticks; tick++) {
   const [direction, action] = reference.inputs[tick - 1];
-  const audio = [];
   frames += core.runFrame(direction, action);
   const block = core.popAudio();
-  if (block) audio.push(Buffer.from(block));
-  const tickAudio = Buffer.concat(audio);
+  const tickAudio = block ? Buffer.from(block) : Buffer.alloc(0);
   accumulatedAudio.push(tickAudio);
   audioBytes += tickAudio.length;
   assert.equal(core.popAudio(), null, 'An audio block must be consumed only once');
