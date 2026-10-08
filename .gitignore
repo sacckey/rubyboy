@@ -9,6 +9,7 @@
 /build/
 /rubies/
 
+.DS_Store
 *.wasm
 *.sav
 *.sav.tmp
