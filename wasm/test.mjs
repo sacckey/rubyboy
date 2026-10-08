@@ -36,38 +36,36 @@ assert.equal(info.executor_sha256, hash(readFileSync('lib/executor.rb')));
 assert.equal(info.emulator_sha256, hash(readFileSync('lib/rubyboy/emulator_wasm.rb')));
 assert.equal(info.wasm_sha256, hash(bytes));
 const rom = readFileSync('lib/roms/tobu.gb');
-for (const scenario of reference.scenarios) {
-  core.loadUploadedRom(Uint8Array.from(rom).buffer);
-  assert.equal(root.contents.has('rom.data'), false);
+core.loadUploadedRom(Uint8Array.from(rom).buffer);
+assert.equal(root.contents.has('rom.data'), false);
+assert.equal(core.popAudio(), null);
+const accumulated = [];
+let frames = 0;
+let audioBytes = 0;
+for (let tick = 1; tick <= reference.ticks; tick++) {
+  const [direction, action] = reference.inputs[tick - 1];
+  const blocks = [];
+  frames += core.runFrame(direction, action);
+  const block = core.popAudio();
+  if (block) blocks.push(Buffer.from(block));
+  const audio = Buffer.concat(blocks);
+  accumulated.push(audio);
+  audioBytes += audio.length;
   assert.equal(core.popAudio(), null);
-  const accumulated = [];
-  let frames = 0;
-  let audioBytes = 0;
-  for (let tick = 1; tick <= reference.ticks; tick++) {
-    const [direction, action] = reference.inputs[tick - 1];
-    const blocks = [];
-    frames += core.runFrame(direction, action);
-    const block = core.popAudio();
-    if (block) blocks.push(Buffer.from(block));
-    const audio = Buffer.concat(blocks);
-    accumulated.push(audio);
-    audioBytes += audio.length;
-    assert.equal(core.popAudio(), null);
-    const expected = scenario.checkpoints.find(entry => entry.tick === tick);
-    if (!expected) continue;
-    const file = root.contents.get('video.data');
-    const video = core.framebuffer();
-    assert.deepEqual({ tick, frames, video_sha256: hash(video),
-      audio_sha256: hash(audio), audio_bytes: audio.length,
-      accumulated_audio_sha256: hash(Buffer.concat(accumulated)),
-      accumulated_audio_bytes: audioBytes }, expected, `${scenario.mode} tick ${tick}`);
-    const transferred = structuredClone(video, { transfer: [video] });
-    assert.equal(video.byteLength, 0);
-    assert.equal(hash(transferred), hash(file.data));
-  }
-  assert(audioBytes > 0);
-  console.log(`PASS ${scenario.mode}: identical Ruby framebuffer/audio bytes at six checkpoints`);
+  const expected = reference.checkpoints.find(entry => entry.tick === tick);
+  if (!expected) continue;
+  const file = root.contents.get('video.data');
+  const video = core.framebuffer();
+  assert.deepEqual({ tick, frames, video_sha256: hash(video),
+    audio_sha256: hash(audio), audio_bytes: audio.length,
+    accumulated_audio_sha256: hash(Buffer.concat(accumulated)),
+    accumulated_audio_bytes: audioBytes }, expected, `frame tick ${tick}`);
+  const transferred = structuredClone(video, { transfer: [video] });
+  assert.equal(video.byteLength, 0);
+  assert.equal(hash(transferred), hash(file.data));
 }
+assert(audioBytes > 0);
+console.log(`PASS frame: identical Ruby framebuffer/audio bytes at six checkpoints`);
 for (const name of ['tobu.gb', 'bgbtest.gb']) {
   core.loadPreInstalledRom(name);
   assert.equal(core.runFrame(15, 15), 1);

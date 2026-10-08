@@ -40,46 +40,44 @@ assert.equal(hash(bundledRom), hash(romBytes), 'The default packed ROM must matc
 assert.equal(vm.eval('Executor.instance_method(:exec).source_location.first').toString(),
   '/lib/executor.rb');
 
-for (const scenario of reference.scenarios) {
-  // Upload the current repository ROM so the old packed asset cannot change the fixture.
-  core.loadUploadedRom(Uint8Array.from(romBytes).buffer);
-  assert.equal(root.contents.has('rom.data'), false);
+// Upload the current repository ROM so the old packed asset cannot change the fixture.
+core.loadUploadedRom(Uint8Array.from(romBytes).buffer);
+assert.equal(root.contents.has('rom.data'), false);
+assert.equal(root.contents.has('video.data'), false);
+assert.equal(core.popAudio(), null);
+const accumulatedAudio = [];
+let frames = 0;
+let audioBytes = 0;
+for (let tick = 1; tick <= reference.ticks; tick++) {
+  const [direction, action] = reference.inputs[tick - 1];
+  const audio = [];
+  frames += core.runFrame(direction, action);
+  const block = core.popAudio();
+  if (block) audio.push(Buffer.from(block));
+  const tickAudio = Buffer.concat(audio);
+  accumulatedAudio.push(tickAudio);
+  audioBytes += tickAudio.length;
+  assert.equal(core.popAudio(), null, 'An audio block must be consumed only once');
+  const expected = reference.checkpoints.find(checkpoint => checkpoint.tick === tick);
+  if (!expected) continue;
+  const videoFile = root.contents.get('video.data');
+  assert.equal(videoFile?.data.length, 160 * 144 * 4);
+  const video = core.framebuffer();
   assert.equal(root.contents.has('video.data'), false);
-  assert.equal(core.popAudio(), null);
-  const accumulatedAudio = [];
-  let frames = 0;
-  let audioBytes = 0;
-  for (let tick = 1; tick <= reference.ticks; tick++) {
-    const [direction, action] = reference.inputs[tick - 1];
-    const audio = [];
-    frames += core.runFrame(direction, action);
-    const block = core.popAudio();
-    if (block) audio.push(Buffer.from(block));
-    const tickAudio = Buffer.concat(audio);
-    accumulatedAudio.push(tickAudio);
-    audioBytes += tickAudio.length;
-    assert.equal(core.popAudio(), null, 'An audio block must be consumed only once');
-    const expected = scenario.checkpoints.find(checkpoint => checkpoint.tick === tick);
-    if (!expected) continue;
-    const videoFile = root.contents.get('video.data');
-    assert.equal(videoFile?.data.length, 160 * 144 * 4);
-    const video = core.framebuffer();
-    assert.equal(root.contents.has('video.data'), false);
-    const actual = {
-      tick, frames, video_sha256: hash(video),
-      audio_sha256: hash(tickAudio), audio_bytes: tickAudio.length,
-      accumulated_audio_sha256: hash(Buffer.concat(accumulatedAudio)),
-      accumulated_audio_bytes: audioBytes,
-    };
-    assert.deepEqual(actual, expected, `${scenario.mode} checkpoint ${tick}`);
-    // The worker transfers this copy; transfer must leave the WASI source usable.
-    const transfer = structuredClone(video, { transfer: [video] });
-    assert.equal(video.byteLength, 0);
-    assert.equal(hash(videoFile.data), hash(transfer));
-    console.log(`PASS ${scenario.mode}: tick ${tick}, ${frames} frames, ${audioBytes} audio bytes`);
-  }
-  assert.ok(audioBytes > 0, 'The APU must produce stereo audio');
+  const actual = {
+    tick, frames, video_sha256: hash(video),
+    audio_sha256: hash(tickAudio), audio_bytes: tickAudio.length,
+    accumulated_audio_sha256: hash(Buffer.concat(accumulatedAudio)),
+    accumulated_audio_bytes: audioBytes,
+  };
+  assert.deepEqual(actual, expected, `frame checkpoint ${tick}`);
+  // The worker transfers this copy; transfer must leave the WASI source usable.
+  const transfer = structuredClone(video, { transfer: [video] });
+  assert.equal(video.byteLength, 0);
+  assert.equal(hash(videoFile.data), hash(transfer));
+  console.log(`PASS frame: tick ${tick}, ${frames} frames, ${audioBytes} audio bytes`);
 }
+assert.ok(audioBytes > 0, 'The APU must produce stereo audio');
 
 assert.throws(() => core.loadUploadedRom(new ArrayBuffer(5)), /ROM size/);
 assert.throws(() => core.loadPreInstalledRom('../other.gb'), /Unknown bundled ROM/);

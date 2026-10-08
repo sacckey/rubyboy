@@ -13,8 +13,6 @@ require_relative 'cartridge/factory'
 
 module Rubyboy
   class EmulatorWasm
-    CPU_CLOCK_HZ = 4_194_304
-    CYCLE_NANOSEC = 1_000_000_000 / CPU_CLOCK_HZ
     FRAME_CYCLES = 70_224
 
     attr_reader :audio_samples

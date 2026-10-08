@@ -45,7 +45,7 @@ def run_reference(rom, checkpoints)
       accumulated_audio_bytes: accumulated_audio.bytesize
     }
   end
-  { mode: 'frame', checkpoints: results }
+  results
 end
 
 puts JSON.generate({
@@ -53,5 +53,5 @@ puts JSON.generate({
                      rom_sha256: Digest::SHA256.file(rom_path).hexdigest,
                      ticks: 60,
                      inputs: (1..60).map { |tick| input_for(tick) },
-                     scenarios: [run_reference(rom, checkpoints)]
+                     checkpoints: run_reference(rom, checkpoints)
                    })
