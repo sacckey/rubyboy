@@ -81,10 +81,10 @@ node scripts/test_wasm_runtime.mjs
 
 The tests use Ruby from `PATH`; validation used Ruby 4.0.7 and Node 24.4.0.
 `wasm/test.mjs` executes the actual Spinel module through the same RubyboyVM
-adapter. Frame and cycle-budget scenarios use the existing CRuby reference;
-framebuffer and Float32 audio bytes must match at six checkpoints in each
-scenario. It also checks embedded files, uploads, ROM switching, exception
-recovery, transfer copies, LCD-off return and 1500 continuous frames.
+adapter. Frame execution uses the existing CRuby reference; framebuffer and
+Float32 audio bytes must match at six checkpoints, including input changes.
+It also checks embedded files, uploads, ROM switching, exception recovery,
+transfer copies, LCD-off return and 1500 continuous frames.
 
 Spinel's separate generic host tests use a small Ruby program with no emulator
 code, covering ordinary values, binary and text Strings, GC, exceptions and

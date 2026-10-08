@@ -31,10 +31,13 @@ const module = await WebAssembly.compile(wasmBytes);
 const { vm, wasi } = await DefaultRubyVM(module);
 const root = wasi.fds[3].dir;
 const core = new RubyboyVM(vm, root, File);
+for (const value of ['#{raise "must not execute"}', '"quoted" \\ path 日本語\nnext line']) {
+  assert.equal(core.toValue(value).toString(), value, 'Ruby value conversion must preserve literal strings');
+}
 console.log(`Browser runtime: ${vm.eval('RUBY_DESCRIPTION').toString()}`);
 const bundledRom = Buffer.from(vm.eval("File.binread('/lib/roms/tobu.gb').unpack1('H*')").toString(), 'hex');
 assert.equal(hash(bundledRom), hash(romBytes), 'The default packed ROM must match the repository ROM');
-assert.equal(vm.eval('Executor.instance_method(:exec_cycles).source_location.first').toString(),
+assert.equal(vm.eval('Executor.instance_method(:exec).source_location.first').toString(),
   '/lib/executor.rb');
 
 for (const scenario of reference.scenarios) {
@@ -49,17 +52,9 @@ for (const scenario of reference.scenarios) {
   for (let tick = 1; tick <= reference.ticks; tick++) {
     const [direction, action] = reference.inputs[tick - 1];
     const audio = [];
-    if (scenario.mode === 'frame') {
-      frames += core.runFrame(direction, action);
-      const block = core.popAudio();
-      if (block) audio.push(Buffer.from(block));
-    } else {
-      for (const budget of reference.cycle_budgets) {
-        frames += core.runCycles(budget, direction, action);
-        const block = core.popAudio();
-        if (block) audio.push(Buffer.from(block));
-      }
-    }
+    frames += core.runFrame(direction, action);
+    const block = core.popAudio();
+    if (block) audio.push(Buffer.from(block));
     const tickAudio = Buffer.concat(audio);
     accumulatedAudio.push(tickAudio);
     audioBytes += tickAudio.length;
@@ -86,15 +81,6 @@ for (const scenario of reference.scenarios) {
   assert.ok(audioBytes > 0, 'The APU must produce stereo audio');
 }
 
-// Tiny budgets must account for instruction overshoot instead of executing once per tick.
-core.loadUploadedRom(Uint8Array.from(romBytes).buffer);
-const budgets = [1, 3, 7, 8192];
-for (const budget of budgets) core.runCycles(budget, 14, 13);
-const splitState = vm.eval('Marshal.dump($executor.instance_variable_get(:@emulator)).bytes.join(",")').toString();
-core.loadUploadedRom(Uint8Array.from(romBytes).buffer);
-core.runCycles(budgets.reduce((sum, budget) => sum + budget, 0), 14, 13);
-assert.equal(vm.eval('Marshal.dump($executor.instance_variable_get(:@emulator)).bytes.join(",")').toString(), splitState);
-assert.throws(() => core.runCycles(32769, 15, 15), /Invalid cycle budget/);
 assert.throws(() => core.loadUploadedRom(new ArrayBuffer(5)), /ROM size/);
 assert.throws(() => core.loadPreInstalledRom('../other.gb'), /Unknown bundled ROM/);
 
@@ -115,4 +101,4 @@ assert.equal(core.framebuffer().byteLength, 160 * 144 * 4);
 core.loadPreInstalledRom('bgbtest.gb');
 core.runFrame(15, 15);
 assert.equal(core.framebuffer().byteLength, 160 * 144 * 4);
-console.log('PASS packed sources, audio consumption, buffer transfer, split budgets, LCD-off, and bundled ROMs');
+console.log('PASS packed sources, audio consumption, buffer transfer, LCD-off, and bundled ROMs');

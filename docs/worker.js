@@ -7,6 +7,7 @@ startEmulationWorker(async () => {
   // Keep the existing local-first download and proxy fallback.
   let response = await fetch('./rubyboy.wasm');
   if (!response.ok) response = await fetch('https://proxy.sacckey.dev/rubyboy.wasm');
+  if (!response.ok) throw new Error(`Wasm download failed (${response.status}).`);
   const module = await WebAssembly.compileStreaming(response);
   const { vm, wasi } = await DefaultRubyVM(module);
   return {

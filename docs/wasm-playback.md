@@ -121,10 +121,9 @@ If the Wasm is at `docs/rubyboy.wasm`, omit the path argument.
 `verify_wasm_package.mjs` checks Ruby 4.0.7, the current Rubyboy version, and the
 file list, size and SHA-256 of every regular file packed under `/lib`.
 `test_wasm_runtime.mjs` prints the host Ruby description, Wasm Ruby description,
-Wasm hash and ROM hash. It compares pixels and Float32 audio with CRuby for both
-frame execution and split cycle budgets, including input changes. It also
-checks source loading, copied buffers, audio consumption, instruction overshoot,
-LCD-off behavior and the existing packed ROMs.
+Wasm hash and ROM hash. It compares pixels and Float32 audio with CRuby for
+frame execution, including input changes. It also checks source loading, copied
+buffers, audio consumption, LCD-off behavior and the existing packed ROMs.
 
 ## Check an additional Wasm optimization
 

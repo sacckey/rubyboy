@@ -46,17 +46,9 @@ for (const scenario of reference.scenarios) {
   for (let tick = 1; tick <= reference.ticks; tick++) {
     const [direction, action] = reference.inputs[tick - 1];
     const blocks = [];
-    if (scenario.mode === 'frame') {
-      frames += core.runFrame(direction, action);
-      const block = core.popAudio();
-      if (block) blocks.push(Buffer.from(block));
-    } else {
-      for (const budget of reference.cycle_budgets) {
-        frames += core.runCycles(budget, direction, action);
-        const block = core.popAudio();
-        if (block) blocks.push(Buffer.from(block));
-      }
-    }
+    frames += core.runFrame(direction, action);
+    const block = core.popAudio();
+    if (block) blocks.push(Buffer.from(block));
     const audio = Buffer.concat(blocks);
     accumulated.push(audio);
     audioBytes += audio.length;
@@ -83,7 +75,6 @@ for (const name of ['tobu.gb', 'bgbtest.gb']) {
 }
 assert.throws(() => core.loadPreInstalledRom('../other.gb'), /Unknown bundled ROM/);
 assert.throws(() => core.loadUploadedRom(new ArrayBuffer(5)), /ROM size/);
-assert.throws(() => core.runCycles(32769, 15, 15), /Invalid cycle budget/);
 const unsupported = Uint8Array.from(rom);
 unsupported[0x147] = 0xff;
 assert.throws(() => core.loadUploadedRom(unsupported.buffer));

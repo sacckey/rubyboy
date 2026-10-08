@@ -11,15 +11,15 @@ begin
     opts.banner = "Usage: #{File.basename($PROGRAM_NAME)} [options]"
 
     opts.on('--count COUNT', Integer, 'Number of trials for the benchmark') do |count|
-      options[:count] = Integer(count)
+      options[:count] = count
     end
 
     opts.on('--frames FRAMES', Integer, 'Number of measured frames per trial') do |frames|
-      options[:frames] = Integer(frames)
+      options[:frames] = frames
     end
 
     opts.on('--warmup-frames FRAMES', Integer, 'Number of unmeasured warmup frames per trial (default: 0)') do |frames|
-      options[:warmup_frames] = Integer(frames)
+      options[:warmup_frames] = frames
     end
 
     opts.on('--render', 'Draw each frame without audio output or realtime synchronization') do

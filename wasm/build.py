@@ -10,7 +10,7 @@ import shutil
 import subprocess
 
 ROOT = Path(__file__).resolve().parent.parent
-ENTRIES = ('init', 'exec', 'exec_cycles', 'read_rom_from_virtual_fs', 'read_pre_installed_rom')
+ENTRIES = ('init', 'exec', 'read_rom_from_virtual_fs', 'read_pre_installed_rom')
 
 
 def run(argv, **kwargs):

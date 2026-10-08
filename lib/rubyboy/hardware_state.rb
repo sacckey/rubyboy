@@ -173,6 +173,7 @@ module Rubyboy
     end
   end
 
+  # Keep channel fields explicit so Spinel can compile them without reflection.
   module ApuChannels
     class Channel1
       def hardware_state

@@ -17,13 +17,6 @@ class Executor
     1
   end
 
-  def exec_cycles(cycle_budget, direction_key = 0b1111, action_key = 0b1111)
-    frames = @emulator.run_cycles(cycle_budget, direction_key, action_key)
-    write_framebuffer if frames > 0
-    write_audio
-    frames
-  end
-
   def read_rom_from_virtual_fs
     rom_path = '/rom.data'
     raise "ROM file not found in virtual filesystem at #{rom_path}" unless File.exist?(rom_path)

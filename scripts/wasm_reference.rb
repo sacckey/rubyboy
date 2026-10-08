@@ -21,7 +21,7 @@ def input_for(tick)
   [direction, action]
 end
 
-def run_reference(rom, mode, checkpoints)
+def run_reference(rom, checkpoints)
   emulator = Rubyboy::EmulatorWasm.new(rom)
   accumulated_audio = +''.b
   frames = 0
@@ -29,18 +29,9 @@ def run_reference(rom, mode, checkpoints)
   60.times do |index|
     tick = index + 1
     direction, action = input_for(tick)
-    budgets = mode == 'frame' ? [] : [32_768, 32_768, 4688]
-    audio = +''.b
-    if mode == 'frame'
-      emulator.step(direction, action)
-      frames += 1
-      audio << emulator.audio_samples.pack('e*')
-    else
-      budgets.each do |budget|
-        frames += emulator.run_cycles(budget, direction, action)
-        audio << emulator.audio_samples.pack('e*')
-      end
-    end
+    emulator.step(direction, action)
+    frames += 1
+    audio = emulator.audio_samples.pack('e*')
     accumulated_audio << audio
     next unless checkpoints.include?(tick)
 
@@ -54,7 +45,7 @@ def run_reference(rom, mode, checkpoints)
       accumulated_audio_bytes: accumulated_audio.bytesize
     }
   end
-  { mode:, checkpoints: results }
+  { mode: 'frame', checkpoints: results }
 end
 
 puts JSON.generate({
@@ -62,6 +53,5 @@ puts JSON.generate({
                      rom_sha256: Digest::SHA256.file(rom_path).hexdigest,
                      ticks: 60,
                      inputs: (1..60).map { |tick| input_for(tick) },
-                     cycle_budgets: [32_768, 32_768, 4688],
-                     scenarios: %w[frame cycles].map { |mode| run_reference(rom, mode, checkpoints) }
+                     scenarios: [run_reference(rom, checkpoints)]
                    })

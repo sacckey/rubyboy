@@ -13,10 +13,6 @@ module RubyboyBrowser
     @executor.exec(direction, action)
   end
 
-  def self.exec_cycles(cycles, direction, action)
-    @executor.exec_cycles(cycles, direction, action)
-  end
-
   def self.read_rom_from_virtual_fs
     @executor.read_rom_from_virtual_fs
     true
@@ -32,7 +28,6 @@ end
 if __FILE__ == $PROGRAM_NAME
   RubyboyBrowser.init(File.expand_path('../lib/roms/tobu.gb', __dir__))
   p RubyboyBrowser.exec(15, 15)
-  p RubyboyBrowser.exec_cycles(32768, 15, 15)
   p RubyboyBrowser.read_pre_installed_rom('tobu.gb')
   p RubyboyBrowser.read_rom_from_virtual_fs
 end

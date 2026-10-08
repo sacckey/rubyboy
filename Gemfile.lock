@@ -3,7 +3,6 @@ PATH
   specs:
     rubyboy (1.6.0)
       ffi (~> 1.16, >= 1.16.3)
-      json (~> 2.8)
 
 GEM
   remote: https://rubygems.org/

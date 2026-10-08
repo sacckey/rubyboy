@@ -22,7 +22,6 @@ function loopHarness(EmulationLoop, frameResult = 1, {frameMs = 0, timerTurnarou
       time += frameMs;
       return frameResult;
     },
-    runCycles() { throw new Error('Presentation throttling must not split frames into cycle batches'); },
     framebuffer() { const buffer = new ArrayBuffer(160 * 144 * 4); frames.push(buffer); return buffer; },
     popAudio() { audioDrains++; return new Float32Array([.25, -.25]).buffer; },
   };
@@ -119,8 +118,8 @@ function testClock(EmulationLoop) {
   toggled.loop.stop();
 
   const lcdOff = loopHarness(EmulationLoop, 0);
-  lcdOff.loop.updateInput('KeyI', true);
-  lcdOff.loop.updateInput('KeyI', false);
+  lcdOff.loop.setInput(0, 8);
+  lcdOff.loop.setInput(0, 0);
   lcdOff.loop.start();
   lcdOff.runNext();
   assert.equal(lcdOff.calls[0].action, 7);
@@ -140,18 +139,18 @@ function testClock(EmulationLoop) {
 function testInput(EmulationLoop) {
   const shortPress = loopHarness(EmulationLoop);
   shortPress.loop.start();
-  shortPress.loop.updateInput('KeyI', true);
-  shortPress.loop.updateInput('KeyI', false);
+  shortPress.loop.setInput(0, 8);
+  shortPress.loop.setInput(0, 0);
   shortPress.advance(10);
   assert.equal(shortPress.calls.length, 1, 'a short press survives waiting for the next frame');
   shortPress.runNext();
   assert.equal(shortPress.calls[1].action, 7);
   shortPress.runNext();
   assert.equal(shortPress.calls[2].action, 15, 'the latch clears after the next frame');
-  shortPress.loop.updateInput('KeyK', true);
-  assert.equal(shortPress.loop.inputMasks()[1], 14, 'K remains Game Boy A');
-  shortPress.loop.updateInput('KeyJ', true);
-  assert.equal(shortPress.loop.inputMasks()[1], 12, 'J remains Game Boy B');
+  shortPress.loop.setInput(0, 1);
+  assert.equal(shortPress.loop.inputMasks()[1], 14, 'the first action bit is active-low');
+  shortPress.loop.setInput(0, 3);
+  assert.equal(shortPress.loop.inputMasks()[1], 12, 'held action bits combine');
   shortPress.loop.releaseInputs();
   assert.deepEqual(shortPress.loop.inputMasks(), [15, 15]);
   shortPress.loop.stop();
@@ -364,6 +363,91 @@ async function testIndex() {
   assert.equal(duringStartup.worklets[0].messages.at(-1), samples, 'audio can resume after muting during startup');
 }
 
+async function testWorker(EmulationLoop) {
+  let listener;
+  let loop;
+  let frameCalls = 0;
+  const timers = new Map();
+  const messages = [];
+  const adapter = {
+    runFrame() { frameCalls++; return 1; },
+    framebuffer: () => new ArrayBuffer(160 * 144 * 4),
+    popAudio: () => null,
+    loadUploadedRom() { throw new Error('Unsupported ROM'); },
+    async loadPreInstalledRom(name) {
+      if (name !== 'tobu.gb') throw new Error('Unknown bundled ROM');
+    },
+  };
+  const context = vm.createContext({
+    EmulationLoop: class extends EmulationLoop {
+      constructor(adapter, emit) {
+        super(adapter, emit, {now: () => 0,
+          setTimeout: callback => { timers.set(1, callback); return 1; },
+          clearTimeout: handle => timers.delete(handle)});
+        loop = this;
+      }
+    },
+    initialize: async () => ({adapter, runtime: {ruby: 'test'}}),
+    postMessage: message => messages.push(message),
+    self: {addEventListener: (_type, callback) => { listener = callback; }},
+  });
+  const source = fs.readFileSync(path.join(docs, 'emulation-worker.js'), 'utf8')
+    .replace(/^import .*;\n/gm, '').replace('export function', 'function');
+  vm.runInContext(source + '\nstartEmulationWorker(initialize);', context);
+  const send = async data => { listener({data}); await new Promise(setImmediate); };
+  listener({data: {type: 'initRubyboy'}});
+  await send({type: 'startRubyboy'});
+  assert.equal(messages[0].type, 'initialized', 'initialization precedes queued playback');
+  assert.equal(frameCalls, 1);
+  for (const data of [{type: 'loadROM'}, {type: 'loadPreInstalledRom', romName: 'missing.gb'}]) {
+    const before = loop.completedFrames;
+    await send(data);
+    assert.equal(loop.running, true, 'a failed ROM load resumes the previous emulator');
+    assert.equal(timers.size, 1, 'recovery schedules exactly one loop');
+    assert.equal(loop.completedFrames, before + 1, 'a failed load preserves the frame counter');
+    assert.equal(messages.at(-2).type, 'error');
+    assert.equal(messages.at(-1).type, 'pixelData', 'the old emulator presents another frame');
+    assert.equal(messages.filter(message => message.type === 'romLoaded').length, 0);
+  }
+  await send({type: 'stopRubyboy'});
+  const pausedFrames = frameCalls;
+  await send({type: 'loadROM'});
+  assert.equal(loop.running, false, 'a failed load does not resume paused playback');
+  assert.equal(frameCalls, pausedFrames);
+  assert.equal(timers.size, 0);
+  await send({type: 'loadPreInstalledRom', romName: 'tobu.gb'});
+  assert.equal(loop.running, true, 'a successful ROM load still starts playback');
+  assert.equal(loop.completedFrames, 1, 'a successful load resets the frame counter');
+  assert.equal(messages.filter(message => message.type === 'romLoaded').length, 1);
+  adapter.runFrame = () => { throw new Error('Emulation failed'); };
+  await send({type: 'stopRubyboy'});
+  await send({type: 'startRubyboy'});
+  assert.equal(loop.running, false, 'execution errors still stop the loop');
+  assert.equal(timers.size, 0);
+  assert.equal(messages.at(-1).message, 'Emulation failed');
+}
+
+async function testDownload() {
+  const source = fs.readFileSync(path.join(docs, 'worker.js'), 'utf8').replace(/^import .*;\n/gm, '');
+  for (const statuses of [[200], [404, 200], [404, 503]]) {
+    const urls = [];
+    let initialize;
+    let compiled = false;
+    const context = vm.createContext({
+      startEmulationWorker: callback => { initialize = callback; },
+      fetch: async url => { const status = statuses[urls.length]; urls.push(url); return {ok: status === 200, status}; },
+      WebAssembly: {compileStreaming: async response => { assert.equal(response.ok, true); compiled = true; return {}; }},
+      DefaultRubyVM: async () => ({vm: {eval: () => 'test'}, wasi: {fds: [null, null, null, {dir: {}}]}}),
+      RubyboyVM: class {}, File: class {},
+    });
+    vm.runInContext(source, context);
+    if (statuses.at(-1) === 200) await initialize();
+    else await assert.rejects(initialize(), /Wasm download failed \(503\)/);
+    assert.equal(compiled, statuses.at(-1) === 200, 'failed responses never reach the Wasm compiler');
+    assert.deepEqual(urls, ['./rubyboy.wasm', 'https://proxy.sacckey.dev/rubyboy.wasm'].slice(0, statuses.length));
+  }
+}
+
 (async () => {
   const source = fs.readFileSync(path.join(docs, 'emulation-loop.js'), 'utf8');
   const {EmulationLoop} = await import('data:text/javascript;base64,' + Buffer.from(source).toString('base64'));
@@ -371,5 +455,7 @@ async function testIndex() {
   testInput(EmulationLoop);
   testWorklet();
   await testIndex();
-  console.log('Wasm frontend tests passed: frame pacing and slow-host throughput, normal/unlimited, input latch and sources, audio transfer/ring/resampling, live playback toggles and startup race, URL defaults and upload race.');
+  await testWorker(EmulationLoop);
+  await testDownload();
+  console.log('Wasm frontend tests passed: frame pacing and slow-host throughput, normal/unlimited, input latch and sources, audio transfer/ring/resampling, live playback toggles and startup race, URL defaults, upload race, ROM failure recovery and Wasm download errors.');
 })().catch(error => { console.error(error); process.exitCode = 1; });
