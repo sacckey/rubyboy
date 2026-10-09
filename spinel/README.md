@@ -41,4 +41,4 @@ See [BENCHMARK.md](../BENCHMARK.md) for the options and how to compare runtimes.
 
 ## Verified with
 
-Spinel `2810a23` (matz/spinel, 2026-10-08) on macOS (Apple Silicon).
+Spinel `7d999f50c` (matz/spinel, 2026-10-10) on macOS (Apple Silicon).
