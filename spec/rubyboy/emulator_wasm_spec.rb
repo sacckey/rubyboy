@@ -25,48 +25,41 @@ RSpec.describe Rubyboy::EmulatorWasm do
   it 'matches the desktop core, including APU state and copied audio blocks' do
     browser = described_class.new(rom_data)
     reference = Rubyboy::EmulatorHeadless.new(rom_path)
-    reference_cycles = 0
-    requested_cycles = 0
+    reference_apu = reference.instance_variable_get(:@apu)
+    original_apu_step = reference_apu.method(:step)
+    samples = []
+    reference_apu.define_singleton_method(:step) do |cycles|
+      complete = original_apu_step.call(cycles)
+      samples.concat(reference_apu.samples) if complete
+      complete
+    end
+    browser_ppu = browser.instance_variable_get(:@ppu)
+    original_ppu_step = browser_ppu.method(:step)
+    frame_complete = false
+    browser_ppu.define_singleton_method(:step) do |cycles|
+      frame_complete = original_ppu_step.call(cycles)
+    end
     produced_samples = 0
 
     120.times do
-      frames = browser.run_cycles(70_224, 15, 15)
-      requested_cycles += 70_224
-      expected_frames = 0
       samples = []
-      while reference_cycles < requested_cycles
-        cycles = reference.instance_variable_get(:@cpu).exec
-        reference_cycles += cycles
-        reference.instance_variable_get(:@timer).step(cycles)
-        apu = reference.instance_variable_get(:@apu)
-        samples.concat(apu.samples) if apu.step(cycles)
-        expected_frames += 1 if reference.instance_variable_get(:@ppu).step(cycles)
+      reference.step
+      browser_samples = []
+      # A browser call can return early while Tobu disables the LCD. Compare
+      # completed PPU frames and retain audio from those bounded calls as well.
+      120.times do
+        browser.step(15, 15)
+        browser_samples.concat(browser.audio_samples)
+        break if frame_complete
       end
 
-      expect(frames).to eq(expected_frames)
-      expect(browser.framebuffer).to eq(reference.framebuffer)
-      expect(browser.audio_samples).to eq(samples)
+      expect(frame_complete).to be(true)
+      expect(browser.framebuffer).to eq(reference.instance_variable_get(:@ppu).buffer)
+      expect(browser_samples).to eq(samples)
       expect(state(browser)).to eq(state(reference))
       produced_samples += samples.length
     end
     expect(produced_samples).to be > 0
-  end
-
-  it 'carries instruction overshoot across small cycle budgets' do
-    split = described_class.new(rom_data)
-    whole = described_class.new(rom_data)
-    budgets = [1, 3, 7, 8192] * 100
-    frames = 0
-    samples = []
-    budgets.each do |budget|
-      frames += split.run_cycles(budget, 15, 15)
-      samples.concat(split.audio_samples)
-    end
-
-    expect(whole.run_cycles(budgets.sum, 15, 15)).to eq(frames)
-    expect(split.framebuffer).to eq(whole.framebuffer)
-    expect(samples).to eq(whole.audio_samples)
-    expect(state(split)).to eq(state(whole))
   end
 
   it 'returns a framebuffer from step and keeps the partial APU block' do
@@ -101,29 +94,26 @@ RSpec.describe Rubyboy::EmulatorWasm do
     expect(emulator.instance_variable_get(:@ppu).hardware_state[:registers][:ly]).to eq(0)
   end
 
-  it 'uses active-low input masks and rejects invalid cycle budgets' do
+  it 'uses active-low input masks' do
     emulator = described_class.new(loop_rom)
 
-    expect(emulator.run_cycles(0, 14, 13)).to eq(0)
+    emulator.step(14, 13)
+
     joypad = emulator.instance_variable_get(:@joypad).hardware_state
     expect(joypad[:direction_buttons]).to eq(0xfe)
     expect(joypad[:action_buttons]).to eq(0xfd)
-    expect(emulator.audio_samples).to be_empty
-    [-1, 1.5, '4'].each do |budget|
-      expect { emulator.run_cycles(budget, 15, 15) }.to raise_error(ArgumentError)
-    end
   end
 end
 
 RSpec.describe Executor do
   let(:rom_path) { File.expand_path('../../lib/roms/tobu.gb', __dir__) }
 
-  it 'writes little-endian pixels and stereo Float32 audio for the legacy frame call' do
+  it 'writes little-endian pixels and stereo Float32 audio for a frame call' do
     executor = described_class.new(rom_path)
     writes = {}
     allow(File).to receive(:binwrite) { |path, bytes| writes[path] = bytes }
 
-    expect(executor.exec).to eq(1)
+    executor.exec
 
     emulator = executor.instance_variable_get(:@emulator)
     expect(writes.fetch('/video.data').unpack('V*')).to eq(emulator.framebuffer)
@@ -134,16 +124,16 @@ RSpec.describe Executor do
     end
   end
 
-  it 'writes a frame only after the PPU completes it and skips empty audio' do
+  it 'writes the framebuffer and skips empty audio' do
     executor = described_class.new(rom_path)
+    emulator = executor.instance_variable_get(:@emulator)
+    allow(emulator).to receive(:audio_samples).and_return([])
     allow(File).to receive(:binwrite)
 
-    expect(executor.exec_cycles(1)).to eq(0)
+    executor.exec
 
-    expect(File).not_to have_received(:binwrite)
-    expect(executor.exec_cycles(70_224)).to eq(1)
     expect(File).to have_received(:binwrite).with('/video.data', a_string_matching(/./m))
-    expect(File).to have_received(:binwrite).with('/audio.data', a_string_matching(/./m))
+    expect(File).not_to have_received(:binwrite).with('/audio.data', anything)
   end
 
   it 'uses the existing packed ROM directory' do

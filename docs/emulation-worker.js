@@ -5,17 +5,12 @@ export function startEmulationWorker(initialize) {
     constructor() {
       this.adapter = null;
       this.loop = null;
-      this.requestId = 0;
       this.initializing = null;
     }
 
     async init() {
-      const { adapter, runtime } = await initialize();
-      this.adapter = adapter;
-      this.loop = new EmulationLoop(this.adapter, (message, transfers) => {
-        postMessage({ ...message, requestId: this.requestId }, transfers);
-      });
-      return runtime;
+      this.adapter = await initialize();
+      this.loop = new EmulationLoop(this.adapter, (message, transfers) => postMessage(message, transfers));
     }
 
     async ensureInitialized() {
@@ -24,12 +19,18 @@ export function startEmulationWorker(initialize) {
     }
 
     async load(data) {
+      const wasRunning = this.loop.running;
       this.loop.stop();
-      if (data.type === 'loadROM') await this.adapter.loadUploadedRom(data.data);
-      else await this.adapter.loadPreInstalledRom(data.romName);
-      this.requestId = data.requestId ?? this.requestId + 1;
-      this.loop.completedFrames = 0;
-      postMessage({ type: 'romLoaded', requestId: this.requestId });
+      try {
+        if (data.type === 'loadROM') await this.adapter.loadUploadedRom(data.data);
+        else await this.adapter.loadPreInstalledRom(data.romName);
+      } catch (error) {
+        // A rejected ROM leaves the previous emulator usable.
+        postMessage({ type: 'error', message: error.message });
+        if (wasRunning) this.loop.start();
+        return;
+      }
+      postMessage({ type: 'romLoaded' });
       this.loop.start();
     }
   }
@@ -37,17 +38,14 @@ export function startEmulationWorker(initialize) {
   const rubyboy = new Rubyboy();
   const handlers = {
     async initRubyboy() {
-      const runtime = await rubyboy.ensureInitialized();
-      postMessage({ type: 'initialized', runtime });
+      await rubyboy.ensureInitialized();
+      postMessage({ type: 'initialized' });
     },
     startRubyboy() { rubyboy.loop.start(); },
-    stopRubyboy() { rubyboy.loop.stop(); },
     setThrottle(data) { rubyboy.loop.setThrottle(data.enabled); },
     setMute(data) { rubyboy.loop.setMuted(data.enabled); },
     input(data) { rubyboy.loop.setInput(data.direction, data.action); },
     releaseInputs() { rubyboy.loop.releaseInputs(); },
-    keydown(data) { rubyboy.loop.updateInput(data.code, true); },
-    keyup(data) { rubyboy.loop.updateInput(data.code, false); },
     loadROM(data) { return rubyboy.load(data); },
     loadPreInstalledRom(data) { return rubyboy.load(data); },
   };
@@ -59,7 +57,7 @@ export function startEmulationWorker(initialize) {
     if (!handler) return;
     messages = messages.then(() => handler(data)).catch((error) => {
       rubyboy.loop?.stop();
-      postMessage({ type: 'error', requestId: data.requestId ?? rubyboy.requestId, message: error.message });
+      postMessage({ type: 'error', message: error.message });
     });
   });
 }

@@ -126,7 +126,6 @@ function sendInput() {
 }
 function releaseInputs() {
   pressedSources.clear();
-  sendInput();
   worker.postMessage({ type: 'releaseInputs' });
 }
 for (const type of ['keydown', 'keyup']) {

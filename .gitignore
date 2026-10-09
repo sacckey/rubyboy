@@ -9,6 +9,7 @@
 /build/
 /rubies/
 
+.DS_Store
 *.wasm
 *.sav
 *.sav.tmp
@@ -17,6 +18,3 @@
 
 # rspec failure tracking
 .rspec_status
-
-# Local Spinel build metadata (Wasm binaries are ignored above)
-/docs/spinel/build-info.json

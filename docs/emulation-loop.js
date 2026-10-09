@@ -2,8 +2,6 @@
 const CLOCK_HZ = 4_194_304;
 const FRAME_CYCLES = 70_224;
 const FRAME_MILLISECONDS = FRAME_CYCLES / CLOCK_HZ * 1000;
-const DIRECTION_KEYS = { KeyD: 1, KeyA: 2, KeyW: 4, KeyS: 8 };
-const ACTION_KEYS = { KeyK: 1, KeyJ: 2, KeyU: 4, KeyI: 8 };
 
 export class EmulationLoop {
   constructor(adapter, emit, options = {}) {
@@ -19,7 +17,6 @@ export class EmulationLoop {
     this.action = 0;
     this.directionPending = 0;
     this.actionPending = 0;
-    this.completedFrames = 0;
     this.loopHandle = null;
     this.loopTick = this.tick.bind(this);
     this.resetClock();
@@ -43,15 +40,6 @@ export class EmulationLoop {
     this.actionPending |= this.action;
   }
 
-  updateInput(code, pressed) {
-    const directionMask = DIRECTION_KEYS[code] || 0;
-    const actionMask = ACTION_KEYS[code] || 0;
-    this.setInput(
-      pressed ? this.direction | directionMask : this.direction & ~directionMask,
-      pressed ? this.action | actionMask : this.action & ~actionMask,
-    );
-  }
-
   releaseInputs() {
     this.direction = this.action = this.directionPending = this.actionPending = 0;
   }
@@ -64,9 +52,9 @@ export class EmulationLoop {
     this.directionPending = this.actionPending = 0;
   }
 
-  sendFrame(frameCount) {
+  sendFrame() {
     const data = this.adapter.framebuffer();
-    this.emit({ type: 'pixelData', data, frameCount, completedFrames: this.completedFrames }, [data]);
+    this.emit({ type: 'pixelData', data }, [data]);
   }
 
   drainAudio() {
@@ -77,12 +65,10 @@ export class EmulationLoop {
   }
 
   runFrame() {
-    const frames = this.adapter.runFrame(...this.inputMasks());
-    this.completedFrames += frames;
-    // Even an LCD-off fallback advances a frame's CPU time.
+    this.adapter.runFrame(...this.inputMasks());
     this.clearPending();
     this.drainAudio();
-    this.sendFrame(frames);
+    this.sendFrame();
   }
 
   runThrottled() {

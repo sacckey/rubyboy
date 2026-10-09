@@ -13,8 +13,6 @@ require_relative 'cartridge/factory'
 
 module Rubyboy
   class EmulatorWasm
-    CPU_CLOCK_HZ = 4_194_304
-    CYCLE_NANOSEC = 1_000_000_000 / CPU_CLOCK_HZ
     FRAME_CYCLES = 70_224
 
     attr_reader :audio_samples
@@ -31,7 +29,6 @@ module Rubyboy
       @bus = Bus.new(@ppu, rom, ram, mbc, @timer, interrupt, @joypad, @apu)
       @cpu = Cpu.new(@bus, interrupt)
       @audio_samples = []
-      @cycle_debt = 0
     end
 
     def step(direction_key, action_key)
@@ -47,25 +44,6 @@ module Rubyboy
         break if @ppu.step(cycles)
       end
       framebuffer
-    end
-
-    # CPU instructions are indivisible. Carry their overshoot into the next
-    # budget so small browser ticks do not make the emulated clock run faster.
-    def run_cycles(cycle_budget, direction_key, action_key)
-      raise ArgumentError, 'cycle budget must be a nonnegative integer' unless cycle_budget.is_a?(Integer) && cycle_budget >= 0
-
-      set_input(direction_key, action_key)
-      @audio_samples.clear
-      @cycle_debt += cycle_budget
-      frames = 0
-      while @cycle_debt > 0
-        cycles = @cpu.exec
-        @cycle_debt -= cycles
-        @timer.step(cycles)
-        collect_audio(cycles)
-        frames += 1 if @ppu.step(cycles)
-      end
-      frames
     end
 
     def framebuffer

@@ -1,29 +1,20 @@
-// CRuby and the Rubyboy sources are packed into the downloaded Wasm.
-const ROM_NAMES = new Set(['tobu.gb', 'bgbtest.gb']);
-
+// Calls the Ruby Executor in either build and moves its output out of the WASI file system.
+// Without an executor option, it creates one in the ruby.wasm VM.
 export class RubyboyVM {
   constructor(vm, root, File, { executor, toValue } = {}) {
-    this.vm = vm;
     this.root = root;
     this.File = File;
-    this.toValue = toValue || (value => vm.eval(JSON.stringify(value)));
+    this.toValue = toValue || (value => vm.wrap(value).call(typeof value === 'number' ? 'to_i' : 'to_s'));
     this.executor = executor || vm.eval(`
       require 'js'
       require '/lib/executor'
       $executor = Executor.new
     `);
     this.inputValues = Array.from({ length: 16 }, (_, value) => this.toValue(value));
-    this.fullBudget = this.toValue(32768);
   }
 
   runFrame(direction, action) {
-    return Number(this.executor.call('exec', this.inputValues[direction], this.inputValues[action]).toString());
-  }
-
-  runCycles(cycles, direction, action) {
-    if (!Number.isInteger(cycles) || cycles <= 0 || cycles > 32768) throw new Error('Invalid cycle budget.');
-    const budget = cycles === 32768 ? this.fullBudget : this.toValue(cycles);
-    return Number(this.executor.call('exec_cycles', budget, this.inputValues[direction], this.inputValues[action]).toString());
+    this.executor.call('exec', this.inputValues[direction], this.inputValues[action]);
   }
 
   framebuffer() {
@@ -60,7 +51,6 @@ export class RubyboyVM {
   }
 
   loadPreInstalledRom(name) {
-    if (!ROM_NAMES.has(name)) throw new Error('Unknown bundled ROM.');
     this.executor.call('read_pre_installed_rom', this.toValue(name));
     this.clearOutputs();
   }

@@ -1,3 +1,10 @@
+## [Unreleased]
+
+- Keep audio output with --unlimited by dropping audio that cannot be played in time
+- Remove the --no-audio player option
+- Remove rubyboy-bench --render and --json, and the SDL 2.0.18 requirement
+- Stop shipping the rubyboy-wasm build command and the browser files in the gem
+
 ## [1.6.0] - 2026-10-04
 
 - Add battery-backed saves and hardware-oriented save states

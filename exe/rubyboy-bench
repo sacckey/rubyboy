@@ -11,23 +11,15 @@ begin
     opts.banner = "Usage: #{File.basename($PROGRAM_NAME)} [options]"
 
     opts.on('--count COUNT', Integer, 'Number of trials for the benchmark') do |count|
-      options[:count] = Integer(count)
+      options[:count] = count
     end
 
     opts.on('--frames FRAMES', Integer, 'Number of measured frames per trial') do |frames|
-      options[:frames] = Integer(frames)
+      options[:frames] = frames
     end
 
     opts.on('--warmup-frames FRAMES', Integer, 'Number of unmeasured warmup frames per trial (default: 0)') do |frames|
-      options[:warmup_frames] = Integer(frames)
-    end
-
-    opts.on('--render', 'Draw each frame without audio output or realtime synchronization') do
-      options[:render] = true
-    end
-
-    opts.on('--json', 'Output benchmark results and runtime information as JSON') do
-      options[:json] = true
+      options[:warmup_frames] = frames
     end
 
     opts.on('--rom-path ROM_PATH', String, 'Path to the ROM file') do |rom_path|
@@ -45,18 +37,16 @@ rescue OptionParser::ParseError, ArgumentError => e
   exit 1
 end
 
-unless options[:json]
-  puts "Ruby: #{RUBY_VERSION}"
-  if defined?(RubyVM::YJIT)
-    puts "YJIT: #{RubyVM::YJIT.enabled?}"
-  else
-    puts 'YJIT is not available in this environment.'
-  end
+puts "Ruby: #{RUBY_VERSION}"
+if defined?(RubyVM::YJIT)
+  puts "YJIT: #{RubyVM::YJIT.enabled?}"
+else
+  puts 'YJIT is not available in this environment.'
 end
 
 begin
   Rubyboy::Bench.new.run(**options)
-rescue ArgumentError, Rubyboy::Bench::WindowClosed => e
+rescue ArgumentError => e
   warn e.message
   exit 1
 end

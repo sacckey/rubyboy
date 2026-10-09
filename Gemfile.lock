@@ -3,7 +3,6 @@ PATH
   specs:
     rubyboy (1.6.0)
       ffi (~> 1.16, >= 1.16.3)
-      json (~> 2.8)
 
 GEM
   remote: https://rubygems.org/
@@ -13,7 +12,6 @@ GEM
     benchmark (0.5.0)
     diff-lcs (1.5.0)
     ffi (1.16.3)
-    heap-profiler (0.7.0)
     js (2.10.1)
     json (2.18.0)
     language_server-protocol (3.17.0.3)
@@ -64,7 +62,6 @@ GEM
       logger
     ruby_wasm (2.10.1-x86_64-linux)
       logger
-    stackprof (0.2.25)
     unicode-display_width (2.5.0)
 
 PLATFORMS
@@ -75,7 +72,6 @@ PLATFORMS
 
 DEPENDENCIES
   benchmark
-  heap-profiler (~> 0.7.0)
   js (= 2.10.1)
   ostruct
   rake (~> 13.0)
@@ -83,7 +79,6 @@ DEPENDENCIES
   rubocop (~> 1.57)
   ruby_wasm (= 2.10.1)
   rubyboy!
-  stackprof (~> 0.2.25)
 
 BUNDLED WITH
   4.0.20

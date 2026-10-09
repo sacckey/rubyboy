@@ -57,6 +57,8 @@ RSpec.describe 'hardware state snapshots' do
     shared_examples 'a compatible channel snapshot' do |channel_class, fields|
       it 'preserves the saved field set and restores non-default values' do
         channel = channel_class.new
+        expect(channel.hardware_state.keys).to match_array(channel.instance_variables.map { _1.to_s.delete_prefix('@').to_sym })
+
         expected = fields.each_with_index.to_h do |field, index|
           initial = channel.instance_variable_get("@#{field}")
           value = case initial
