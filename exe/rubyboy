@@ -9,7 +9,7 @@ realtime = true
 
 begin
   OptionParser.new do |opts|
-    opts.banner = "Usage: #{File.basename($PROGRAM_NAME)} ROM_PATH"
+    opts.banner = "Usage: #{File.basename($PROGRAM_NAME)} [ROM_PATH]"
 
     opts.on('--frames N', 'Exit after N frames (positive integer)') do |value|
       value = Integer(value)
@@ -26,11 +26,11 @@ begin
   end.parse!
 rescue OptionParser::ParseError, ArgumentError => e
   puts e.message
-  puts "Usage: #{File.basename($PROGRAM_NAME)} ROM_PATH"
+  puts "Usage: #{File.basename($PROGRAM_NAME)} [ROM_PATH]"
   exit 1
 end
 
-rom_path = ARGV.shift || 'lib/roms/tobu.gb'
+rom_path = ARGV.shift || Rubyboy::Rom::DEFAULT_PATH
 
 puts "Ruby: #{RUBY_VERSION}"
 if defined?(RubyVM::YJIT)

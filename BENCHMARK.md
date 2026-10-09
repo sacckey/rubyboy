@@ -19,7 +19,7 @@ bundle exec ruby --yjit -Ilib exe/rubyboy-bench \
 
 | Option | Default | Meaning |
 | --- | --- | --- |
-| `--rom-path PATH` | `lib/roms/tobu.gb` | ROM to run |
+| `--rom-path PATH` | Bundled `tobu.gb` | ROM to run |
 | `--frames N` | 1500 | Measured frames per trial |
 | `--warmup-frames N` | 0 | Unmeasured frames before each trial |
 | `--count N` | 3 | Number of trials |

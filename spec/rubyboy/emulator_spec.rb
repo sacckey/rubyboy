@@ -14,6 +14,16 @@ RSpec.describe Rubyboy::Emulator do
       expect(emulator).to have_received(:start).with(frames: 3, realtime: false)
     end
 
+    it 'runs the bundled ROM when no ROM path is given' do
+      emulator = instance_double(described_class, start: nil)
+      stub_const('ARGV', [])
+      expect(described_class).to receive(:new).with(Rubyboy::Rom::DEFAULT_PATH).and_return(emulator)
+
+      load executable
+
+      expect(File.file?(Rubyboy::Rom::DEFAULT_PATH)).to be(true)
+    end
+
     it 'rejects invalid frame counts before creating the emulator' do
       expect(described_class).not_to receive(:new)
 

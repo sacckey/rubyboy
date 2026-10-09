@@ -4,7 +4,7 @@ require_relative 'rubyboy/emulator_headless'
 
 module Rubyboy
   class Bench
-    def run(count: 3, frames: 1500, rom_path: 'lib/roms/tobu.gb', warmup_frames: 0)
+    def run(count: 3, frames: 1500, rom_path: Rom::DEFAULT_PATH, warmup_frames: 0)
       validate_integer(:count, count, 1)
       validate_integer(:frames, frames, 1)
       validate_integer(:warmup_frames, warmup_frames, 0)
