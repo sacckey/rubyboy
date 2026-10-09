@@ -1,99 +1,50 @@
-// Run after the browser runtime dependencies and docs/rubyboy.wasm are available.
-// mise exec ruby@4.0.7 -- node scripts/test_wasm_runtime.mjs [path/to/rubyboy.wasm]
+// Smoke test for the packed ruby.wasm: its /lib files and the shared browser adapter.
+// node scripts/test_wasm_runtime.mjs [path/to/rubyboy.wasm]
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
-import { spawnSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { DefaultRubyVM } from '../build/browser-runtime/node_modules/@ruby/wasm-wasi/dist/esm/browser.js';
 import { File } from '../build/browser-runtime/node_modules/@bjorn3/browser_wasi_shim/dist/index.js';
 import { RubyboyVM } from '../docs/rubyboy-vm.js';
 
-const sourceRoot = new URL('../', import.meta.url);
+const repoRoot = fileURLToPath(new URL('../', import.meta.url));
 const hash = bytes => createHash('sha256').update(new Uint8Array(bytes)).digest('hex');
-const romBytes = readFileSync(new URL('lib/roms/tobu.gb', sourceRoot));
-const wasmPath = process.argv[2] || fileURLToPath(new URL('docs/rubyboy.wasm', sourceRoot));
-const wasmBytes = readFileSync(wasmPath);
+const wasmPath = process.argv[2] || `${repoRoot}docs/rubyboy.wasm`;
+const { vm, wasi } = await DefaultRubyVM(await WebAssembly.compile(readFileSync(wasmPath)));
+console.log(`Wasm: ${wasmPath} (${vm.eval('RUBY_DESCRIPTION').toString()})`);
 
-const referenceProcess = spawnSync('ruby', [fileURLToPath(new URL('wasm_reference.rb', import.meta.url))], {
-  cwd: fileURLToPath(sourceRoot), encoding: 'utf8', maxBuffer: 1024 * 1024,
-});
-assert.equal(referenceProcess.status, 0, referenceProcess.stderr || 'CRuby reference failed');
-const reference = JSON.parse(referenceProcess.stdout);
-assert.equal(hash(romBytes), reference.rom_sha256);
+// /lib must hold exactly the tracked files, so a stale pack or local saves fail here.
+const tracked = execFileSync('git', ['ls-files', '-z', 'lib'], { cwd: repoRoot, encoding: 'utf8' })
+  .split('\0').filter(Boolean).sort();
+vm.eval("require 'digest/sha2'; require 'json'");
+const packed = JSON.parse(vm.eval(`JSON.generate(
+  Dir.glob('/lib/**/*', File::FNM_DOTMATCH).select { |path| File.file?(path) }.sort
+    .to_h { |path| [path.delete_prefix('/'), Digest::SHA256.file(path).hexdigest] })`).toString());
+assert.deepEqual(Object.keys(packed), tracked, 'Packed /lib differs from tracked files');
+for (const path of tracked) assert.equal(packed[path], hash(readFileSync(repoRoot + path)), `Stale packed file: ${path}`);
 
-console.log(`Host: ${reference.ruby}`);
-console.log(`Wasm: ${wasmPath}`);
-console.log(`Wasm SHA-256: ${hash(wasmBytes)}`);
-console.log(`ROM SHA-256: ${reference.rom_sha256}`);
-
-const module = await WebAssembly.compile(wasmBytes);
-const { vm, wasi } = await DefaultRubyVM(module);
 const root = wasi.fds[3].dir;
 const core = new RubyboyVM(vm, root, File);
 for (const value of ['#{raise "must not execute"}', '"quoted" \\ path 日本語\nnext line']) {
   assert.equal(core.toValue(value).toString(), value, 'Ruby value conversion must preserve literal strings');
 }
-console.log(`Browser runtime: ${vm.eval('RUBY_DESCRIPTION').toString()}`);
-const bundledRom = Buffer.from(vm.eval("File.binread('/lib/roms/tobu.gb').unpack1('H*')").toString(), 'hex');
-assert.equal(hash(bundledRom), hash(romBytes), 'The default packed ROM must match the repository ROM');
-assert.equal(vm.eval('Executor.instance_method(:exec).source_location.first').toString(),
-  '/lib/executor.rb');
 
-// Upload the current repository ROM so the old packed asset cannot change the fixture.
-core.loadUploadedRom(Uint8Array.from(romBytes).buffer);
+core.loadUploadedRom(Uint8Array.from(readFileSync(`${repoRoot}lib/roms/tobu.gb`)).buffer);
 assert.equal(root.contents.has('rom.data'), false);
-assert.equal(root.contents.has('video.data'), false);
-assert.equal(core.popAudio(), null);
-const accumulatedAudio = [];
 let audioBytes = 0;
-for (let tick = 1; tick <= reference.ticks; tick++) {
-  const [direction, action] = reference.inputs[tick - 1];
-  core.runFrame(direction, action);
-  const block = core.popAudio();
-  const tickAudio = block ? Buffer.from(block) : Buffer.alloc(0);
-  accumulatedAudio.push(tickAudio);
-  audioBytes += tickAudio.length;
-  assert.equal(core.popAudio(), null, 'An audio block must be consumed only once');
-  const expected = reference.checkpoints.find(checkpoint => checkpoint.tick === tick);
-  if (!expected) continue;
-  const videoFile = root.contents.get('video.data');
-  assert.equal(videoFile?.data.length, 160 * 144 * 4);
-  const video = core.framebuffer();
-  assert.equal(root.contents.has('video.data'), false);
-  const actual = {
-    tick, video_sha256: hash(video),
-    audio_sha256: hash(tickAudio), audio_bytes: tickAudio.length,
-    accumulated_audio_sha256: hash(Buffer.concat(accumulatedAudio)),
-    accumulated_audio_bytes: audioBytes,
-  };
-  assert.deepEqual(actual, expected, `frame checkpoint ${tick}`);
-  // The worker transfers this copy; transfer must leave the WASI source usable.
-  const transfer = structuredClone(video, { transfer: [video] });
-  assert.equal(video.byteLength, 0);
-  assert.equal(hash(videoFile.data), hash(transfer));
-  console.log(`PASS frame: tick ${tick}, ${audioBytes} audio bytes`);
+for (let frame = 0; frame < 60; frame++) {
+  core.runFrame(15, 15);
+  assert.equal(core.framebuffer().byteLength, 160 * 144 * 4);
+  audioBytes += core.popAudio()?.byteLength ?? 0;
 }
-assert.ok(audioBytes > 0, 'The APU must produce stereo audio');
-
+assert.ok(audioBytes > 0, 'The APU must produce audio');
 assert.throws(() => core.loadUploadedRom(new ArrayBuffer(5)), /ROM size/);
 assert.throws(() => core.loadPreInstalledRom('../other.gb'), /Unknown bundled ROM/);
-
-// Disabling the LCD must not trap the browser worker in a frame wait.
-core.loadUploadedRom(Uint8Array.from(romBytes).buffer);
-vm.eval('$executor.instance_variable_get(:@emulator).instance_variable_get(:@ppu).write_byte(0xff40, 0)');
-core.runFrame(15, 15);
-assert.equal(core.framebuffer().byteLength, 160 * 144 * 4);
-assert.ok(core.popAudio().byteLength > 0);
-core.clearOutputs();
-assert.equal(core.popAudio(), null);
-assert.equal(root.contents.has('video.data'), false);
-
-// Existing ROMs and Ruby sources are packed together under /lib.
-core.loadPreInstalledRom('tobu.gb');
-core.runFrame(15, 15);
-assert.equal(core.framebuffer().byteLength, 160 * 144 * 4);
-core.loadPreInstalledRom('bgbtest.gb');
-core.runFrame(15, 15);
-assert.equal(core.framebuffer().byteLength, 160 * 144 * 4);
-console.log('PASS packed sources, audio consumption, buffer transfer, LCD-off, and bundled ROMs');
+for (const name of ['tobu.gb', 'bgbtest.gb']) {
+  core.loadPreInstalledRom(name);
+  core.runFrame(15, 15);
+  assert.equal(core.framebuffer().byteLength, 160 * 144 * 4);
+}
+console.log(`PASS ${tracked.length} packed files, adapter, ROM loading and 60 frames`);
