@@ -8,6 +8,7 @@ from pathlib import Path
 import shlex
 import shutil
 import subprocess
+import tempfile
 
 ROOT = Path(__file__).resolve().parent.parent
 ENTRIES = ('init', 'exec', 'read_rom_from_virtual_fs', 'read_pre_installed_rom')
@@ -46,8 +47,16 @@ def main():
          '--ext', 'wasm', '--ext-init', 'Init_rubyboy_browser', '--ext-entry',
          ','.join('RubyboyBrowser.' + name for name in ENTRIES),
          ROOT / 'wasm/spinel_main.rb', '-o', build / 'rubyboy-spinel.wasm'], env=environment, cwd=ROOT)
-    run(['python3', spinel / 'scripts/wasm-pack.py', build / 'rubyboy-spinel.wasm',
-         '--dir', str(ROOT / 'lib/roms') + '::/lib/roms', '-o', output / 'rubyboy-spinel.wasm'])
+    # Embed only Git-tracked ROM files so local saves and states stay out of the Wasm.
+    roms = [ROOT / path for path in subprocess.check_output(
+        ['git', '-C', ROOT, 'ls-files', '-z', 'lib/roms'], text=True).split('\0') if path]
+    with tempfile.TemporaryDirectory() as staging:
+        for rom in roms:
+            target = Path(staging) / rom.relative_to(ROOT / 'lib/roms')
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(rom, target)
+        run(['python3', spinel / 'scripts/wasm-pack.py', build / 'rubyboy-spinel.wasm',
+             '--dir', staging + '::/lib/roms', '-o', output / 'rubyboy-spinel.wasm'])
     # Distribute the generic host without keeping a separately maintained copy.
     host = spinel / 'lib/wasm/spinel-vm.mjs'
     shutil.copyfile(host, output / 'spinel-vm.mjs')
@@ -73,7 +82,7 @@ def main():
         'entry_sha256': digest(ROOT / 'wasm/spinel_main.rb'),
         'roms': [{'path': '/lib/roms/' + path.relative_to(ROOT / 'lib/roms').as_posix(),
                   'bytes': path.stat().st_size, 'sha256': digest(path)}
-                 for path in sorted((ROOT / 'lib/roms').rglob('*')) if path.is_file()],
+                 for path in roms],
         'wasm_bytes': (output / 'rubyboy-spinel.wasm').stat().st_size,
         'wasm_sha256': digest(output / 'rubyboy-spinel.wasm'),
     }

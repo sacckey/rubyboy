@@ -77,7 +77,25 @@ excluded_gems = definition.resolve.materialize(definition.requested_dependencies
 excluded_gems -= %w[js]
 RubyWasm::Packager::EXCLUDED_GEMS.concat(excluded_gems)
 
-RubyboyWasmCLI.new(stdout: $stdout, stderr: $stderr).run(command)
+lib_copy = nil
+if command.first == 'pack'
+  # Pack only Git-tracked files so local saves and states stay out of the Wasm.
+  tracked = IO.popen(%w[git ls-files -z lib], &:read).split("\0")
+  raise 'git ls-files failed' unless Process.last_status.success? && !tracked.empty?
+
+  lib_copy = Dir.mktmpdir('rubyboy-lib-')
+  tracked.each do |path|
+    FileUtils.mkdir_p(File.join(lib_copy, File.dirname(path)))
+    FileUtils.cp(path, File.join(lib_copy, path))
+  end
+  command[command.index('./lib::/lib')] = "#{lib_copy}/lib::/lib"
+end
+
+begin
+  RubyboyWasmCLI.new(stdout: $stdout, stderr: $stderr).run(command)
+ensure
+  FileUtils.rm_rf(lib_copy) if lib_copy
+end
 
 # Keep executable sections unchanged while removing unused C debug information.
 # The SDK is installed by the build command; --keep-debug retains the full module.

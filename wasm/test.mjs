@@ -23,6 +23,11 @@ const executor = { call: (method, ...args) => vm.call(`RubyboyBrowser.${method}`
 const core = new RubyboyVM(vm, root, shim.File, { executor, toValue: value => value });
 const roms = root.contents.get('lib').contents.get('roms');
 const info = JSON.parse(readFileSync('docs/spinel/build-info.json'));
+// Only Git-tracked ROM files are embedded; local saves and states must not be.
+const embedded = dir => [...dir.contents].flatMap(([name, entry]) =>
+  entry instanceof shim.File ? [name] : embedded(entry).map(path => `${name}/${path}`));
+const tracked = spawnSync('git', ['ls-files', '-z', 'lib/roms'], { encoding: 'utf8' }).stdout.split('\0').filter(Boolean);
+assert.deepEqual(embedded(roms).map(path => `lib/roms/${path}`).sort(), tracked.sort());
 for (const entry of info.roms) {
   const relative = entry.path.slice('/lib/roms/'.length);
   let file = roms;

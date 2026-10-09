@@ -2,8 +2,9 @@
 // node scripts/verify_wasm_package.mjs [WASM_PATH] [EXPECTED_RUBY_VERSION]
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { lstatSync, readFileSync, readdirSync } from 'node:fs';
-import { join, relative, resolve } from 'node:path';
+import { readFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { DefaultRubyVM } from '../build/browser-runtime/node_modules/@ruby/wasm-wasi/dist/esm/browser.js';
 
@@ -14,20 +15,13 @@ const versionSource = readFileSync(join(libRoot, 'rubyboy', 'version.rb'), 'utf8
 const expectedAppVersion = versionSource.match(/\bVERSION\s*=\s*['"]([^'"]+)['"]/)[1];
 const sha256 = bytes => createHash('sha256').update(bytes).digest('hex');
 
-function regularFiles(directory) {
-  return readdirSync(directory).sort().flatMap(name => {
-    const path = join(directory, name);
-    const stat = lstatSync(path);
-    if (stat.isDirectory()) return regularFiles(path);
-    return stat.isFile() ? [path] : [];
-  });
-}
-
-const files = regularFiles(libRoot).map(path => {
-  const bytes = readFileSync(path);
-  return { path: relative(libRoot, path).split('\\').join('/'), size: bytes.length, sha256: sha256(bytes) };
+// Only Git-tracked files are packed; local saves and states must not be.
+const tracked = execFileSync('git', ['ls-files', '-z', 'lib'], { cwd: repoRoot, encoding: 'utf8' }).split('\0').filter(Boolean).sort();
+const files = tracked.map(path => {
+  const bytes = readFileSync(join(repoRoot, path));
+  return { path: path.slice('lib/'.length), size: bytes.length, sha256: sha256(bytes) };
 });
-assert.ok(files.length > 0, 'Repository lib must contain regular files');
+assert.ok(files.length > 0, 'Repository lib must contain tracked files');
 const wasmBytes = readFileSync(wasmPath);
 const module = await WebAssembly.compile(wasmBytes);
 const { vm } = await DefaultRubyVM(module);
@@ -44,7 +38,7 @@ vm.eval("require 'json'");
 const packedFiles = JSON.parse(vm.eval(
   "JSON.generate(Dir.glob('/lib/**/*', File::FNM_DOTMATCH).select { |path| File.file?(path) }.map { |path| path.delete_prefix('/lib/') }.sort)"
 ).toString());
-assert.deepEqual(packedFiles, files.map(file => file.path).sort(), 'Packed /lib file list differs from repository');
+assert.deepEqual(packedFiles, files.map(file => file.path).sort(), 'Packed /lib file list differs from tracked repository files');
 
 for (const file of files) {
   const packedPath = JSON.stringify(`/lib/${file.path}`);
@@ -58,5 +52,5 @@ console.log(`Wasm: ${wasmPath}`);
 console.log(`Wasm SHA-256: ${sha256(wasmBytes)}`);
 console.log(`Browser runtime: ${rubyDescription}`);
 console.log(`Packed Rubyboy version: ${appVersion}`);
-console.log(`PASS packed /lib matches repository: ${files.length} regular files, ${files.filter(file => file.path.endsWith('.rb')).length} Ruby sources, ${files.filter(file => file.path.endsWith('.gb')).length} ROMs, ${files.reduce((sum, file) => sum + file.size, 0)} bytes`);
+console.log(`PASS packed /lib matches tracked repository files: ${files.length} files, ${files.filter(file => file.path.endsWith('.rb')).length} Ruby sources, ${files.filter(file => file.path.endsWith('.gb')).length} ROMs, ${files.reduce((sum, file) => sum + file.size, 0)} bytes`);
 console.log(`lib manifest SHA-256: ${sha256(files.map(file => `${file.path}\t${file.size}\t${file.sha256}\n`).join(''))}`);
