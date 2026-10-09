@@ -11,6 +11,7 @@ module RubyboyBrowser
 
   def self.exec(direction, action)
     @executor.exec(direction, action)
+    true
   end
 
   def self.read_rom_from_virtual_fs

@@ -113,7 +113,7 @@ RSpec.describe Executor do
     writes = {}
     allow(File).to receive(:binwrite) { |path, bytes| writes[path] = bytes }
 
-    expect(executor.exec).to eq(1)
+    executor.exec
 
     emulator = executor.instance_variable_get(:@emulator)
     expect(writes.fetch('/video.data').unpack('V*')).to eq(emulator.framebuffer)
@@ -130,7 +130,7 @@ RSpec.describe Executor do
     allow(emulator).to receive(:audio_samples).and_return([])
     allow(File).to receive(:binwrite)
 
-    expect(executor.exec).to eq(1)
+    executor.exec
 
     expect(File).to have_received(:binwrite).with('/video.data', a_string_matching(/./m))
     expect(File).not_to have_received(:binwrite).with('/audio.data', anything)

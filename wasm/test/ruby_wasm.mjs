@@ -1,15 +1,15 @@
 // Smoke test for the packed ruby.wasm: its /lib files and the shared browser adapter.
-// node scripts/test_wasm_runtime.mjs [path/to/rubyboy.wasm]
+// node wasm/test/ruby_wasm.mjs [path/to/rubyboy.wasm]
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { DefaultRubyVM } from '../build/browser-runtime/node_modules/@ruby/wasm-wasi/dist/esm/browser.js';
-import { File } from '../build/browser-runtime/node_modules/@bjorn3/browser_wasi_shim/dist/index.js';
-import { RubyboyVM } from '../docs/rubyboy-vm.js';
+import { DefaultRubyVM } from '../../build/browser-runtime/node_modules/@ruby/wasm-wasi/dist/esm/browser.js';
+import { File } from '../../build/browser-runtime/node_modules/@bjorn3/browser_wasi_shim/dist/index.js';
+import { RubyboyVM } from '../../docs/rubyboy-vm.js';
 
-const repoRoot = fileURLToPath(new URL('../', import.meta.url));
+const repoRoot = fileURLToPath(new URL('../../', import.meta.url));
 const hash = bytes => createHash('sha256').update(new Uint8Array(bytes)).digest('hex');
 const wasmPath = process.argv[2] || `${repoRoot}docs/rubyboy.wasm`;
 const { vm, wasi } = await DefaultRubyVM(await WebAssembly.compile(readFileSync(wasmPath)));
@@ -41,7 +41,7 @@ for (let frame = 0; frame < 60; frame++) {
 }
 assert.ok(audioBytes > 0, 'The APU must produce audio');
 assert.throws(() => core.loadUploadedRom(new ArrayBuffer(5)), /ROM size/);
-assert.throws(() => core.loadPreInstalledRom('../other.gb'), /Unknown bundled ROM/);
+assert.throws(() => core.loadPreInstalledRom('../other.gb'), /ROM not found in allowed ROMs/);
 for (const name of ['tobu.gb', 'bgbtest.gb']) {
   core.loadPreInstalledRom(name);
   core.runFrame(15, 15);

@@ -14,7 +14,6 @@ class Executor
     @emulator.step(direction_key, action_key)
     write_framebuffer
     write_audio
-    1
   end
 
   def read_rom_from_virtual_fs

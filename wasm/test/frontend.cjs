@@ -1,10 +1,10 @@
 // Frame pacing, input latching and audio buffering in the shared browser code.
-// Run: node scripts/test_wasm_frontend.cjs
+// Run: node wasm/test/frontend.cjs
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
-const docs = path.resolve(__dirname, '../docs');
+const docs = path.resolve(__dirname, '../../docs');
 
 const FRAME_MS = 70224 / 4194304 * 1000;
 

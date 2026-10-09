@@ -110,10 +110,10 @@ npm install --prefix build/browser-runtime --no-save --no-audit --no-fund \
 
 | Command | Tests | Needs |
 | --- | --- | --- |
-| `node scripts/test_wasm_frontend.cjs` | Frame pacing, input latching, audio buffering | Nothing |
+| `node wasm/test/frontend.cjs` | Frame pacing, input latching, audio buffering | Nothing |
 | `bundle exec rspec spec/rubyboy/emulator_wasm_spec.rb` | `EmulatorWasm` and `Executor` in CRuby | Nothing |
-| `node scripts/test_wasm_runtime.mjs` | Packed `/lib` files match Git, ROM loading and frames in ruby.wasm | `pack`, the packages above |
-| `node --experimental-wasm-exnref wasm/test.mjs` | Spinel output matches CRuby, embedded files match Git, ROM loading | Spinel build, the packages above, `ruby` on `PATH` |
+| `node wasm/test/ruby_wasm.mjs` | Packed `/lib` files match Git, ROM loading and frames in ruby.wasm | `pack`, the packages above |
+| `node --experimental-wasm-exnref wasm/test/spinel.mjs` | Spinel output matches CRuby, embedded files match Git, ROM loading | Spinel build, the packages above, `ruby` on `PATH` |
 
 ## Deploy
 

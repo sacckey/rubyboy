@@ -3,9 +3,9 @@
 
 require 'digest'
 require 'json'
-require_relative '../lib/rubyboy/emulator_wasm'
+require_relative '../../lib/rubyboy/emulator_wasm'
 
-rom_path = File.expand_path('../lib/roms/tobu.gb', __dir__)
+rom_path = File.expand_path('../../lib/roms/tobu.gb', __dir__)
 rom = File.binread(rom_path).bytes
 checkpoints = [1, 2, 15, 30, 45, 60]
 

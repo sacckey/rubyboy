@@ -1,15 +1,15 @@
 // Execute both backends through the shared RubyboyVM and compare Ruby outputs.
-// node --experimental-wasm-exnref wasm/test.mjs
+// node --experimental-wasm-exnref wasm/test/spinel.mjs
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
-import * as shim from '../build/browser-runtime/node_modules/@bjorn3/browser_wasi_shim/dist/index.js';
-import { createRubyboySpinel } from '../docs/spinel/rubyboy-spinel.mjs';
-import { RubyboyVM } from '../docs/rubyboy-vm.js';
+import * as shim from '../../build/browser-runtime/node_modules/@bjorn3/browser_wasi_shim/dist/index.js';
+import { createRubyboySpinel } from '../../docs/spinel/rubyboy-spinel.mjs';
+import { RubyboyVM } from '../../docs/rubyboy-vm.js';
 
 const hash = bytes => createHash('sha256').update(new Uint8Array(bytes)).digest('hex');
-const native = spawnSync(process.env.RUBY || 'ruby', ['scripts/wasm_reference.rb'], {
+const native = spawnSync(process.env.RUBY || 'ruby', ['wasm/test/reference.rb'], {
   encoding: 'utf8', maxBuffer: 1024 * 1024,
 });
 assert.equal(native.status, 0, native.stderr);
@@ -64,7 +64,7 @@ for (const name of ['tobu.gb', 'bgbtest.gb']) {
   core.runFrame(15, 15);
   assert.equal(core.framebuffer().byteLength, 160 * 144 * 4);
 }
-assert.throws(() => core.loadPreInstalledRom('../other.gb'), /Unknown bundled ROM/);
+assert.throws(() => core.loadPreInstalledRom('../other.gb'), /ROM not found in allowed ROMs/);
 assert.throws(() => core.loadUploadedRom(new ArrayBuffer(5)), /ROM size/);
 const unsupported = Uint8Array.from(rom);
 unsupported[0x147] = 0xff;

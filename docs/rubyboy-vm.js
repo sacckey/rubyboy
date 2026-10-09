@@ -1,9 +1,7 @@
-// CRuby and the Rubyboy sources are packed into the downloaded Wasm.
-const ROM_NAMES = new Set(['tobu.gb', 'bgbtest.gb']);
-
+// Calls the Ruby Executor in either build and moves its output out of the WASI file system.
+// Without an executor option, it creates one in the ruby.wasm VM.
 export class RubyboyVM {
   constructor(vm, root, File, { executor, toValue } = {}) {
-    this.vm = vm;
     this.root = root;
     this.File = File;
     this.toValue = toValue || (value => vm.wrap(value).call(typeof value === 'number' ? 'to_i' : 'to_s'));
@@ -53,7 +51,6 @@ export class RubyboyVM {
   }
 
   loadPreInstalledRom(name) {
-    if (!ROM_NAMES.has(name)) throw new Error('Unknown bundled ROM.');
     this.executor.call('read_pre_installed_rom', this.toValue(name));
     this.clearOutputs();
   }
