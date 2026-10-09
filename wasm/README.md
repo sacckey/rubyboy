@@ -19,7 +19,9 @@ JavaScript. Both run the same Ruby code: `lib/executor.rb` and
 | `docs/emulation-loop.js` | Frame pacing |
 | `docs/rubyboy-vm.js` | Calls the Ruby `Executor` and reads `/video.data` and `/audio.data` from the WASI file system |
 | `docs/audio-worklet.js` | Audio buffering and resampling |
-| `wasm/spinel_main.rb` | Entry points that Spinel exports from the existing `Executor` |
+| `docs/spinel/rubyboy-spinel.mjs` | Puts the bundled files in the WASI file system and calls the Spinel build's exported functions |
+| `wasm/spinel_main.rb` | Entry points that Spinel compiles from the existing `Executor` |
+| `wasm/glue.c` | Exports those entry points to JavaScript and reports Ruby exceptions |
 
 The worker runs one frame per task. With the 60 FPS limit, frames are paced at
 70,224 / 4,194,304 seconds (about 59.73 FPS); a late or slow frame does not cause
@@ -75,32 +77,27 @@ ruby exe/rubyboy-wasm pack
 
 ## Spinel build
 
-The browser build needs a Spinel checkout with `--ext wasm` support, which
-upstream Spinel does not have yet. It also needs Python 3, `make`, a C compiler,
+The browser build uses upstream Spinel, built in `../spinel` as described in
+[spinel/README.md](../spinel/README.md#build-spinel). It also needs Python 3,
 [WASI SDK 34](https://github.com/WebAssembly/wasi-sdk/releases/tag/wasi-sdk-34)
 or later, and a browser that supports WebAssembly exception handling.
-For native executables, which work with upstream Spinel, see
-[spinel/README.md](../spinel/README.md).
-
-With that checkout in `../spinel`:
 
 ```sh
-make -C ../spinel deps
-make -C ../spinel
 python3 wasm/build.py --spinel-dir ../spinel --wasi-sdk /path/to/wasi-sdk-34
 ```
 
+`build.py` builds Spinel's WebAssembly runtime, compiles `wasm/spinel_main.rb` to C
+with callable entry points (`--ext-init` and `--ext-entry`), links it with
+`wasm/glue.c` using the flags from `spinel --print-build`, and appends the
+Git-tracked files in `lib/roms` as a `rubyboy-files` custom section.
 `SPINEL_DIR` and `WASI_SDK` can be used instead of the options.
 
 | Generated file | In Git | Contents |
 | --- | --- | --- |
-| `build/spinel-wasm/rubyboy-spinel.wasm` | No | Compiled `Executor` |
-| `docs/spinel/rubyboy-spinel.wasm` | No | The above with the Git-tracked files in `lib/roms` embedded |
-| `docs/spinel/spinel-vm.mjs` | Yes | Copy of Spinel's JavaScript host |
+| `build/spinel-wasm/rubyboy.c`, `rubyboy.h` | No | Spinel's C output |
+| `build/spinel-wasm/rubyboy-spinel.wasm` | No | Linked module without files |
+| `docs/spinel/rubyboy-spinel.wasm` | No | The above with the Git-tracked files in `lib/roms` appended |
 | `docs/spinel/index.html` | Yes | `docs/index.html` with asset paths and page description adjusted |
-| `docs/spinel/build-info.json` | No | Compiler versions and source/output hashes |
-
-`docs/spinel/worker.js` is written by hand.
 
 ## Tests
 
@@ -124,8 +121,9 @@ GitHub Pages serves `docs/` from `main`. The Wasm files are not in Git, so the
 published pages load them from the proxy, which serves the latest GitHub
 Release's assets.
 
-1. Commit changes to `docs/`, including regenerated `docs/spinel/index.html` and
-   `docs/spinel/spinel-vm.mjs`.
+1. Commit changes to `docs/`, including a regenerated `docs/spinel/index.html`.
+   If `wasm/glue.c` or `docs/spinel/rubyboy-spinel.mjs` changed, do steps 2 and 3
+   right after the change reaches `main`; the page and the Wasm must match.
 2. Upload the Wasm files to the latest release:
 
    ```sh

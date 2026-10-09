@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import * as shim from '../build/browser-runtime/node_modules/@bjorn3/browser_wasi_shim/dist/index.js';
-import { createSpinelVM } from '../docs/spinel/spinel-vm.mjs';
+import { createRubyboySpinel } from '../docs/spinel/rubyboy-spinel.mjs';
 import { RubyboyVM } from '../docs/rubyboy-vm.js';
 
 const hash = bytes => createHash('sha256').update(new Uint8Array(bytes)).digest('hex');
@@ -17,29 +17,20 @@ const reference = JSON.parse(native.stdout);
 const bytes = readFileSync('docs/spinel/rubyboy-spinel.wasm');
 const module = await WebAssembly.compile(bytes);
 assert(WebAssembly.Module.imports(module).every(entry => entry.module === 'wasi_snapshot_preview1'));
-const { vm, root } = await createSpinelVM(module, { shim });
-assert.equal(vm.call('RubyboyBrowser.init', '/lib/roms/tobu.gb'), true);
-const executor = { call: (method, ...args) => vm.call(`RubyboyBrowser.${method}`, ...args) };
-const core = new RubyboyVM(vm, root, shim.File, { executor, toValue: value => value });
+const { root, executor } = await createRubyboySpinel(module, shim);
+const core = new RubyboyVM(null, root, shim.File, { executor, toValue: value => value });
 const roms = root.contents.get('lib').contents.get('roms');
-const info = JSON.parse(readFileSync('docs/spinel/build-info.json'));
 // Only Git-tracked ROM files are embedded; local saves and states must not be.
 const embedded = dir => [...dir.contents].flatMap(([name, entry]) =>
   entry instanceof shim.File ? [name] : embedded(entry).map(path => `${name}/${path}`));
 const tracked = spawnSync('git', ['ls-files', '-z', 'lib/roms'], { encoding: 'utf8' }).stdout.split('\0').filter(Boolean);
 assert.deepEqual(embedded(roms).map(path => `lib/roms/${path}`).sort(), tracked.sort());
-for (const entry of info.roms) {
-  const relative = entry.path.slice('/lib/roms/'.length);
-  let file = roms;
-  for (const part of relative.split('/')) file = file.contents.get(part);
+for (const path of tracked) {
+  let file = root;
+  for (const part of path.split('/')) file = file.contents.get(part);
   assert(file instanceof shim.File && file.readonly);
-  assert.equal(file.data.length, entry.bytes);
-  assert.equal(hash(file.data), entry.sha256);
-  assert.equal(hash(file.data), hash(readFileSync('lib/roms/' + relative)));
+  assert.equal(hash(file.data), hash(readFileSync(path)));
 }
-assert.equal(info.executor_sha256, hash(readFileSync('lib/executor.rb')));
-assert.equal(info.emulator_sha256, hash(readFileSync('lib/rubyboy/emulator_wasm.rb')));
-assert.equal(info.wasm_sha256, hash(bytes));
 const rom = readFileSync('lib/roms/tobu.gb');
 core.loadUploadedRom(Uint8Array.from(rom).buffer);
 assert.equal(root.contents.has('rom.data'), false);
@@ -93,4 +84,4 @@ core.loadUploadedRom(lcdOff.buffer);
 core.runFrame(15, 15);
 assert.equal(core.framebuffer().byteLength, 160 * 144 * 4);
 assert(core.popAudio().byteLength > 0);
-console.log(`PASS embedded files, unchanged Executor, shared adapter, ROM/error recovery, LCD-off and 1500 frames (${bytes.length.toLocaleString()} bytes)`);
+console.log(`PASS embedded files, shared adapter, ROM/error recovery, LCD-off and 1500 frames (${bytes.length.toLocaleString()} bytes)`);
