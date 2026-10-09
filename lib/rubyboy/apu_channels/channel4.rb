@@ -5,13 +5,6 @@ module Rubyboy
     class Channel4
       attr_accessor :enabled, :wave_duty_position
 
-      WAVE_DUTY = [
-        [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0], # 12.5%
-        [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0], # 25%
-        [0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0], # 50%
-        [0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]  # 75%
-      ].freeze
-
       def initialize
         @cycles = 0
         @frequency = 0

@@ -3,7 +3,10 @@
 - Keep audio output with --unlimited by dropping audio that cannot be played in time
 - Remove the --no-audio player option
 - Remove rubyboy-bench --render and --json, and the SDL 2.0.18 requirement
-- Stop shipping the rubyboy-wasm build command and the browser files in the gem
+- Run the bundled Tobu Tobu Girl ROM when rubyboy or rubyboy-bench gets no ROM path, from any directory
+- Read ROM files in binary mode, which fixes loading them on Windows
+- Make the APU duty tables shareable between Ractors
+- Ship only the runtime code, the default ROM and documents in the gem, without the rubyboy-wasm command or test ROMs
 
 ## [1.6.0] - 2026-10-04
 

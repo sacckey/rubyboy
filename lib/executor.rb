@@ -20,7 +20,7 @@ class Executor
     rom_path = '/rom.data'
     raise "ROM file not found in virtual filesystem at #{rom_path}" unless File.exist?(rom_path)
 
-    rom_data = File.open(rom_path, 'rb') { |file| file.read.bytes }
+    rom_data = File.binread(rom_path).bytes
     @emulator = Rubyboy::EmulatorWasm.new(rom_data)
   end
 
@@ -28,7 +28,7 @@ class Executor
     raise 'ROM not found in allowed ROMs' unless ALLOWED_ROMS.include?(rom_name)
 
     rom_path = File.join('/lib/roms', rom_name)
-    rom_data = File.open(rom_path, 'r') { _1.read.bytes }
+    rom_data = File.binread(rom_path).bytes
     @emulator = Rubyboy::EmulatorWasm.new(rom_data)
   end
 

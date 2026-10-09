@@ -14,7 +14,7 @@ require_relative 'cartridge/factory'
 module Rubyboy
   class EmulatorHeadless
     def initialize(rom_path)
-      rom_data = File.open(rom_path, 'r') { _1.read.bytes }
+      rom_data = File.binread(rom_path).bytes
       rom = Rom.new(rom_data)
       ram = Ram.new(rom)
       mbc = Cartridge::Factory.create(rom, ram)

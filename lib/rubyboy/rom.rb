@@ -2,6 +2,9 @@
 
 module Rubyboy
   class Rom
+    # Tobu Tobu Girl, bundled with the gem and used when no ROM is given.
+    DEFAULT_PATH = File.expand_path('../roms/tobu.gb', __dir__).freeze
+
     attr_reader :data, :entroy_point, :logo, :title, :new_licensee_code, :sgb_flag, :cartridge_type, :rom_size, :ram_size, :destination_code, :old_licensee_code, :mask_rom_version_number, :header_checksum, :global_checksum
 
     LOGO_DUMP = %w[

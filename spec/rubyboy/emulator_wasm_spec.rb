@@ -4,7 +4,6 @@ require_relative '../../lib/rubyboy/emulator_wasm'
 require_relative '../../lib/rubyboy/emulator_headless'
 require_relative '../../lib/rubyboy/hardware_state'
 require_relative '../../lib/executor'
-require 'stringio'
 
 RSpec.describe Rubyboy::EmulatorWasm do
   let(:rom_path) { File.expand_path('../../lib/roms/tobu.gb', __dir__) }
@@ -139,7 +138,7 @@ RSpec.describe Executor do
   it 'uses the existing packed ROM directory' do
     executor = described_class.new(rom_path)
     rom = File.binread(rom_path)
-    allow(File).to receive(:open).with('/lib/roms/bgbtest.gb', 'r').and_yield(StringIO.new(rom))
+    allow(File).to receive(:binread).with('/lib/roms/bgbtest.gb').and_return(rom)
 
     expect { executor.read_pre_installed_rom('bgbtest.gb') }.not_to raise_error
     expect { executor.read_pre_installed_rom('../other.gb') }.to raise_error('ROM not found in allowed ROMs')

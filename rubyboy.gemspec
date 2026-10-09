@@ -19,12 +19,11 @@ Gem::Specification.new do |spec|
   spec.metadata['changelog_uri'] = 'https://github.com/sacckey/rubyboy/blob/main/CHANGELOG.md'
   spec.metadata['rubygems_mfa_required'] = 'true'
 
-  # Specify which files should be added to the gem when it is released.
-  # The `git ls-files -z` loads the files in the RubyGem that have been added into git.
+  # Ship only the runtime code, the default ROM and top-level documents.
+  # Test ROMs and the browser builds stay in the repository.
   spec.files = Dir.chdir(__dir__) do
-    `git ls-files -z`.split("\x0").reject do |f|
-      (File.expand_path(f) == __FILE__) ||
-        f.start_with?(*%w[bin/ test/ spec/ features/ .git .circleci appveyor Gemfile docs/ spinel/ wasm/])
+    `git ls-files -z lib exe LICENSE.txt README.md CHANGELOG.md`.split("\x0").reject do |f|
+      f.start_with?('lib/roms/') && f != 'lib/roms/tobu.gb'
     end
   end
   spec.bindir = 'exe'

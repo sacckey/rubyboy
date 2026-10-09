@@ -27,7 +27,9 @@ Rubyboy requires Ruby 3.2 or higher and [SDL2](https://wiki.libsdl.org/SDL2/Inst
 
 ## Usage
 
-    $ RUBYOPT=--yjit rubyboy <rom_path>
+    $ RUBYOPT=--yjit rubyboy [rom_path]
+
+Without a ROM path, it runs the bundled [Tobu Tobu Girl](https://tangramgames.dk/tobutobugirl/).
 
 ### Controls
 
