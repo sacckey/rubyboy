@@ -48,3 +48,15 @@ Use the same machine, ROM, `--frames`, `--warmup-frames` and `--count` for every
 runtime. Use a warmup so that YJIT has compiled the hot code before measurement.
 Record the Ruby version (`ruby -v`) or Spinel revision (`spinel --version`) and the
 Rubyboy revision with each result.
+
+## Results
+
+Measured on 2026-10-10 with Rubyboy `3484036` on a MacBook Air (Apple M4, macOS 15.5)
+on AC power with other applications closed, using the commands above
+(`tobu.gb`, `--frames 1500 --warmup-frames 1500 --count 5`).
+
+| Runtime | Version | FPS |
+| --- | --- | ---: |
+| CRuby | 4.0.7 | 114 |
+| CRuby + YJIT | 4.0.7 | 297 |
+| Spinel (native) | `2810a23` | 603 |
