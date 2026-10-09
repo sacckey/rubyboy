@@ -22,14 +22,6 @@ begin
       options[:warmup_frames] = frames
     end
 
-    opts.on('--render', 'Draw each frame without audio output or realtime synchronization') do
-      options[:render] = true
-    end
-
-    opts.on('--json', 'Output benchmark results and runtime information as JSON') do
-      options[:json] = true
-    end
-
     opts.on('--rom-path ROM_PATH', String, 'Path to the ROM file') do |rom_path|
       options[:rom_path] = rom_path
     end
@@ -45,18 +37,16 @@ rescue OptionParser::ParseError, ArgumentError => e
   exit 1
 end
 
-unless options[:json]
-  puts "Ruby: #{RUBY_VERSION}"
-  if defined?(RubyVM::YJIT)
-    puts "YJIT: #{RubyVM::YJIT.enabled?}"
-  else
-    puts 'YJIT is not available in this environment.'
-  end
+puts "Ruby: #{RUBY_VERSION}"
+if defined?(RubyVM::YJIT)
+  puts "YJIT: #{RubyVM::YJIT.enabled?}"
+else
+  puts 'YJIT is not available in this environment.'
 end
 
 begin
   Rubyboy::Bench.new.run(**options)
-rescue ArgumentError, Rubyboy::Bench::WindowClosed => e
+rescue ArgumentError => e
   warn e.message
   exit 1
 end

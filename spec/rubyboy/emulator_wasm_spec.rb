@@ -54,7 +54,7 @@ RSpec.describe Rubyboy::EmulatorWasm do
       end
 
       expect(frame_complete).to be(true)
-      expect(browser.framebuffer).to eq(reference.framebuffer)
+      expect(browser.framebuffer).to eq(reference.instance_variable_get(:@ppu).buffer)
       expect(browser_samples).to eq(samples)
       expect(state(browser)).to eq(state(reference))
       produced_samples += samples.length

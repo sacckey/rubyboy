@@ -9,7 +9,7 @@ module Rubyboy
     SCALE = 3
     SDL_EVENT_SIZE = 56
 
-    def initialize(vsync: nil)
+    def initialize
       raise SDL.GetError() if SDL.InitSubSystem(SDL::INIT_VIDEO) != 0
 
       @buffer = FFI::MemoryPointer.new(:uint32, SCREEN_WIDTH * SCREEN_HEIGHT)
@@ -17,15 +17,7 @@ module Rubyboy
 
       raise SDL.GetError() if @window.null?
 
-      begin
-        @renderer = SDL.CreateRenderer(@window, -1, 0)
-        raise SDL.GetError() if @renderer.null?
-        raise SDL.GetError() if !vsync.nil? && SDL.RenderSetVSync(@renderer, vsync ? 1 : 0) != 0
-      rescue StandardError
-        close_window
-        raise
-      end
-
+      @renderer = SDL.CreateRenderer(@window, -1, 0)
       SDL.SetHint('SDL_HINT_RENDER_SCALE_QUALITY', '2')
       SDL.RenderSetLogicalSize(@renderer, SCREEN_WIDTH * SCALE, SCREEN_HEIGHT * SCALE)
       @texture = SDL.CreateTexture(@renderer, SDL::PIXELFORMAT_ABGR8888, 1, SCREEN_WIDTH, SCREEN_HEIGHT)

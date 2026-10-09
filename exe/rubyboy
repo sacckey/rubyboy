@@ -6,7 +6,6 @@ require 'optparse'
 
 frames = nil
 realtime = true
-audio = true
 
 begin
   OptionParser.new do |opts|
@@ -18,8 +17,7 @@ begin
 
       frames = value
     end
-    opts.on('--unlimited', 'Disable real-time synchronization') { realtime = false }
-    opts.on('--no-audio', 'Disable audio output while keeping APU emulation') { audio = false }
+    opts.on('--unlimited', 'Disable real-time synchronization; excess audio is dropped') { realtime = false }
 
     opts.on('-h', '--help', 'Displays this help') do
       puts opts
@@ -41,4 +39,4 @@ else
   puts 'YJIT is not available in this environment.'
 end
 
-Rubyboy::Emulator.new(rom_path, audio:).start(frames:, realtime:)
+Rubyboy::Emulator.new(rom_path).start(frames:, realtime:)

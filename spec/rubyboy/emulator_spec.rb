@@ -6,8 +6,8 @@ RSpec.describe Rubyboy::Emulator do
 
     it 'converts the frame count and forwards playback options' do
       emulator = instance_double(described_class, start: nil)
-      stub_const('ARGV', %w[--frames 3 --unlimited --no-audio game.gb])
-      expect(described_class).to receive(:new).with('game.gb', audio: false).and_return(emulator)
+      stub_const('ARGV', %w[--frames 3 --unlimited game.gb])
+      expect(described_class).to receive(:new).with('game.gb').and_return(emulator)
 
       load executable
 
@@ -22,24 +22,6 @@ RSpec.describe Rubyboy::Emulator do
 
         expect { load executable }.to raise_error(SystemExit) { |error| expect(error.status).to eq(1) }
       end
-    end
-  end
-
-  describe '#initialize' do
-    it 'does not open an audio device when audio output is disabled' do
-      rom_path = File.expand_path('../../lib/roms/hello-world.gb', __dir__)
-      allow(Rubyboy::Lcd).to receive(:new).and_return(instance_double(Rubyboy::Lcd))
-      expect(Rubyboy::Audio).not_to receive(:new)
-
-      described_class.new(rom_path, audio: false)
-    end
-
-    it 'opens an audio device by default' do
-      rom_path = File.expand_path('../../lib/roms/hello-world.gb', __dir__)
-      allow(Rubyboy::Lcd).to receive(:new).and_return(instance_double(Rubyboy::Lcd))
-      expect(Rubyboy::Audio).to receive(:new).and_return(instance_double(Rubyboy::Audio))
-
-      described_class.new(rom_path)
     end
   end
 
@@ -79,21 +61,10 @@ RSpec.describe Rubyboy::Emulator do
       expect(emulator).to have_received(:save_save_file).once
     end
 
-    it 'continues synthesizing audio when audio output is disabled' do
-      emulator.instance_variable_set(:@audio, nil)
-
+    it 'queues audio without waiting for the device during unlimited playback' do
       emulator.start(frames: 2, realtime: false)
 
-      expect(apu).to have_received(:step).with(4).twice
-      expect(apu).not_to have_received(:samples)
-      expect(audio).not_to have_received(:queue)
-      expect(lcd).to have_received(:draw).twice
-    end
-
-    it 'queues synthesized audio when audio output is enabled' do
-      emulator.start(frames: 2, realtime: false)
-
-      expect(audio).to have_received(:queue).with([0.25, -0.25]).twice
+      expect(audio).to have_received(:queue).with([0.25, -0.25], wait: false).twice
     end
 
     it 'synchronizes to real time by default and can stop after a finite frame count' do
@@ -104,6 +75,7 @@ RSpec.describe Rubyboy::Emulator do
       expect(Process).to have_received(:clock_gettime).exactly(3).times
       expect(cpu).to have_received(:exec).twice
       expect(lcd).to have_received(:draw).twice
+      expect(audio).to have_received(:queue).with([0.25, -0.25], wait: true).twice
     end
 
     it 'continues until the window closes when no frame count is specified' do
@@ -173,15 +145,6 @@ RSpec.describe Rubyboy::Emulator do
       expect(emulator.load_state(path: 'game.state1')).to be true
 
       expect(audio).to have_received(:clear_queue)
-    end
-
-    it 'can load a state when audio output is disabled' do
-      emulator = described_class.allocate
-      emulator.instance_variable_set(:@rom, instance_double(Rubyboy::Rom))
-      emulator.instance_variable_set(:@audio, nil)
-      allow(Rubyboy::StateFile).to receive(:read).and_return(true)
-
-      expect(emulator.load_state(path: 'game.state1')).to be true
     end
   end
 end

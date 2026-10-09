@@ -17,7 +17,7 @@ module Rubyboy
       SDL::SDL_SCANCODE_0
     ].freeze
 
-    def initialize(rom_path, audio: true)
+    def initialize(rom_path)
       @rom_path = rom_path
       rom_data = File.open(rom_path, 'r') { _1.read.bytes }
       @rom = Rom.new(rom_data)
@@ -31,7 +31,7 @@ module Rubyboy
       @bus = Bus.new(@ppu, @rom, @ram, @mbc, @timer, @interrupt, @joypad, @apu)
       @cpu = Cpu.new(@bus, @interrupt)
       @lcd = Lcd.new
-      @audio = audio ? Audio.new : nil
+      @audio = Audio.new
       @prev_save_state_keys = Array.new(SAVE_STATE_KEYS.size, 0)
       @save_file = @rom.battery? ? SaveFile.new(default_save_path(rom_path)) : nil
       load_save_file
@@ -52,7 +52,7 @@ module Rubyboy
             while !realtime || elapsed_real_time > elapsed_machine_time
               cycles = @cpu.exec
               @timer.step(cycles)
-              @audio.queue(@apu.samples) if @apu.step(cycles) && @audio
+              @audio.queue(@apu.samples, wait: realtime) if @apu.step(cycles)
               if @ppu.step(cycles)
                 @lcd.draw(@ppu.buffer)
                 key_input_check
@@ -102,7 +102,7 @@ module Rubyboy
       state_path = path || slot_path(slot)
       return false unless StateFile.read(state_path, rom: @rom) { |state| restore_hardware_state(state) }
 
-      @audio&.clear_queue
+      @audio.clear_queue
       puts "Loaded state from #{state_path}"
       true
     end
