@@ -10,8 +10,5 @@ startEmulationWorker(async () => {
   if (!response.ok) throw new Error(`Wasm download failed (${response.status}).`);
   const module = await WebAssembly.compileStreaming(response);
   const { vm, wasi } = await DefaultRubyVM(module);
-  return {
-    adapter: new RubyboyVM(vm, wasi.fds[3].dir, File),
-    runtime: { ruby: vm.eval('RUBY_DESCRIPTION').toString() },
-  };
+  return new RubyboyVM(vm, wasi.fds[3].dir, File);
 });

@@ -16,7 +16,7 @@ export class RubyboyVM {
   }
 
   runFrame(direction, action) {
-    return Number(this.executor.call('exec', this.inputValues[direction], this.inputValues[action]).toString());
+    this.executor.call('exec', this.inputValues[direction], this.inputValues[action]);
   }
 
   framebuffer() {

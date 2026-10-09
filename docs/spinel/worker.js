@@ -11,8 +11,5 @@ startEmulationWorker(async () => {
   const { vm, root } = await createSpinelVM(module, { shim });
   vm.call('RubyboyBrowser.init', '/lib/roms/tobu.gb');
   const executor = { call: (method, ...args) => vm.call(`RubyboyBrowser.${method}`, ...args) };
-  return {
-    adapter: new RubyboyVM(vm, root, shim.File, { executor, toValue: value => value }),
-    runtime: { backend: 'spinel' },
-  };
+  return new RubyboyVM(vm, root, shim.File, { executor, toValue: value => value });
 });

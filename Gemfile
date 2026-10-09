@@ -10,11 +10,9 @@ gem 'rake', '~> 13.0'
 group :development, :test do
   # These bundled gems are required by older RuboCop on recent Ruby versions.
   gem 'benchmark'
-  gem 'heap-profiler', '~> 0.7.0'
   gem 'ostruct'
   gem 'rspec', '~> 3.12'
   gem 'rubocop', '~> 1.57'
-  gem 'stackprof', '~> 0.2.25'
 end
 
 group :wasm do

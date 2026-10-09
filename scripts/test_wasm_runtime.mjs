@@ -46,11 +46,10 @@ assert.equal(root.contents.has('rom.data'), false);
 assert.equal(root.contents.has('video.data'), false);
 assert.equal(core.popAudio(), null);
 const accumulatedAudio = [];
-let frames = 0;
 let audioBytes = 0;
 for (let tick = 1; tick <= reference.ticks; tick++) {
   const [direction, action] = reference.inputs[tick - 1];
-  frames += core.runFrame(direction, action);
+  core.runFrame(direction, action);
   const block = core.popAudio();
   const tickAudio = block ? Buffer.from(block) : Buffer.alloc(0);
   accumulatedAudio.push(tickAudio);
@@ -63,7 +62,7 @@ for (let tick = 1; tick <= reference.ticks; tick++) {
   const video = core.framebuffer();
   assert.equal(root.contents.has('video.data'), false);
   const actual = {
-    tick, frames, video_sha256: hash(video),
+    tick, video_sha256: hash(video),
     audio_sha256: hash(tickAudio), audio_bytes: tickAudio.length,
     accumulated_audio_sha256: hash(Buffer.concat(accumulatedAudio)),
     accumulated_audio_bytes: audioBytes,
@@ -73,7 +72,7 @@ for (let tick = 1; tick <= reference.ticks; tick++) {
   const transfer = structuredClone(video, { transfer: [video] });
   assert.equal(video.byteLength, 0);
   assert.equal(hash(videoFile.data), hash(transfer));
-  console.log(`PASS frame: tick ${tick}, ${frames} frames, ${audioBytes} audio bytes`);
+  console.log(`PASS frame: tick ${tick}, ${audioBytes} audio bytes`);
 }
 assert.ok(audioBytes > 0, 'The APU must produce stereo audio');
 
@@ -83,7 +82,7 @@ assert.throws(() => core.loadPreInstalledRom('../other.gb'), /Unknown bundled RO
 // Disabling the LCD must not trap the browser worker in a frame wait.
 core.loadUploadedRom(Uint8Array.from(romBytes).buffer);
 vm.eval('$executor.instance_variable_get(:@emulator).instance_variable_get(:@ppu).write_byte(0xff40, 0)');
-assert.equal(core.runFrame(15, 15), 1);
+core.runFrame(15, 15);
 assert.equal(core.framebuffer().byteLength, 160 * 144 * 4);
 assert.ok(core.popAudio().byteLength > 0);
 core.clearOutputs();

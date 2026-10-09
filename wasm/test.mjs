@@ -40,11 +40,10 @@ core.loadUploadedRom(Uint8Array.from(rom).buffer);
 assert.equal(root.contents.has('rom.data'), false);
 assert.equal(core.popAudio(), null);
 const accumulated = [];
-let frames = 0;
 let audioBytes = 0;
 for (let tick = 1; tick <= reference.ticks; tick++) {
   const [direction, action] = reference.inputs[tick - 1];
-  frames += core.runFrame(direction, action);
+  core.runFrame(direction, action);
   const block = core.popAudio();
   const audio = block ? Buffer.from(block) : Buffer.alloc(0);
   accumulated.push(audio);
@@ -54,7 +53,7 @@ for (let tick = 1; tick <= reference.ticks; tick++) {
   if (!expected) continue;
   const file = root.contents.get('video.data');
   const video = core.framebuffer();
-  assert.deepEqual({ tick, frames, video_sha256: hash(video),
+  assert.deepEqual({ tick, video_sha256: hash(video),
     audio_sha256: hash(audio), audio_bytes: audio.length,
     accumulated_audio_sha256: hash(Buffer.concat(accumulated)),
     accumulated_audio_bytes: audioBytes }, expected, `frame tick ${tick}`);
@@ -66,7 +65,7 @@ assert(audioBytes > 0);
 console.log(`PASS frame: identical Ruby framebuffer/audio bytes at six checkpoints`);
 for (const name of ['tobu.gb', 'bgbtest.gb']) {
   core.loadPreInstalledRom(name);
-  assert.equal(core.runFrame(15, 15), 1);
+  core.runFrame(15, 15);
   assert.equal(core.framebuffer().byteLength, 160 * 144 * 4);
 }
 assert.throws(() => core.loadPreInstalledRom('../other.gb'), /Unknown bundled ROM/);
@@ -77,7 +76,7 @@ assert.throws(() => core.loadUploadedRom(unsupported.buffer));
 assert.equal(root.contents.has('rom.data'), false);
 core.loadUploadedRom(Uint8Array.from(rom).buffer);
 for (let frame = 0; frame < 1500; frame++) {
-  assert.equal(core.runFrame(15, 15), 1);
+  core.runFrame(15, 15);
   assert.equal(core.framebuffer().byteLength, 160 * 144 * 4);
   core.popAudio();
 }
@@ -86,7 +85,7 @@ lcdOff[0x147] = lcdOff[0x148] = lcdOff[0x149] = 0;
 lcdOff.set([0xc3, 0x50, 0x01], 0x100);
 lcdOff.set([0x3e, 0, 0xe0, 0x40, 0x18, 0xfe], 0x150);
 core.loadUploadedRom(lcdOff.buffer);
-assert.equal(core.runFrame(15, 15), 1);
+core.runFrame(15, 15);
 assert.equal(core.framebuffer().byteLength, 160 * 144 * 4);
 assert(core.popAudio().byteLength > 0);
 console.log(`PASS embedded files, unchanged Executor, shared adapter, ROM/error recovery, LCD-off and 1500 frames (${bytes.length.toLocaleString()} bytes)`);

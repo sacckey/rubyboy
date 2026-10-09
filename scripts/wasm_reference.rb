@@ -24,20 +24,17 @@ end
 def run_reference(rom, checkpoints)
   emulator = Rubyboy::EmulatorWasm.new(rom)
   accumulated_audio = +''.b
-  frames = 0
   results = []
   60.times do |index|
     tick = index + 1
     direction, action = input_for(tick)
     emulator.step(direction, action)
-    frames += 1
     audio = emulator.audio_samples.pack('e*')
     accumulated_audio << audio
     next unless checkpoints.include?(tick)
 
     results << {
       tick:,
-      frames:,
       video_sha256: Digest::SHA256.hexdigest(emulator.framebuffer.pack('V*')),
       audio_sha256: Digest::SHA256.hexdigest(audio),
       audio_bytes: audio.bytesize,

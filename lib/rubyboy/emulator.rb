@@ -74,22 +74,6 @@ module Rubyboy
       end
     end
 
-    def bench(frames)
-      @lcd.close_window
-      frame_count = 0
-      start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC, :nanosecond)
-      while frame_count < frames
-        cycles = @cpu.exec
-        @timer.step(cycles)
-        if @ppu.step(cycles)
-          key_input_check
-          frame_count += 1
-        end
-      end
-
-      Process.clock_gettime(Process::CLOCK_MONOTONIC, :nanosecond) - start_time
-    end
-
     def save_state(slot: nil, path: nil)
       state_path = path || slot_path(slot)
       return false unless StateFile.write(state_path, rom: @rom) { hardware_state }

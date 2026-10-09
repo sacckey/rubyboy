@@ -8,7 +8,7 @@ const docs = path.resolve(__dirname, '../docs');
 
 const FRAME_MS = 70224 / 4194304 * 1000;
 
-function loopHarness(EmulationLoop, frameResult = 1, {frameMs = 0, timerTurnaround = 0} = {}) {
+function loopHarness(EmulationLoop, {frameMs = 0, timerTurnaround = 0} = {}) {
   let time = 0;
   let nextTimer = 0;
   let audioDrains = 0;
@@ -20,7 +20,6 @@ function loopHarness(EmulationLoop, frameResult = 1, {frameMs = 0, timerTurnarou
     runFrame(direction, action) {
       calls.push({direction, action, startedAt: time});
       time += frameMs;
-      return frameResult;
     },
     framebuffer() { const buffer = new ArrayBuffer(160 * 144 * 4); frames.push(buffer); return buffer; },
     popAudio() { audioDrains++; return new Float32Array([.25, -.25]).buffer; },
@@ -47,7 +46,7 @@ function loopHarness(EmulationLoop, frameResult = 1, {frameMs = 0, timerTurnarou
 }
 
 function testClock(EmulationLoop) {
-  const fast = loopHarness(EmulationLoop, 1, {frameMs: 2});
+  const fast = loopHarness(EmulationLoop, {frameMs: 2});
   fast.loop.start();
   fast.loop.start();
   assert.equal(fast.timers.size, 1, 'start is idempotent');
@@ -63,13 +62,12 @@ function testClock(EmulationLoop) {
   assert.ok(rate > 59 && rate <= 60, `fast adapters are capped near the Game Boy frame rate: ${rate}`);
   const fastPixels = fast.messages.filter(item => item.message.type === 'pixelData');
   assert.equal(fastPixels.length, fast.calls.length);
-  assert.ok(fastPixels.every(item => item.message.frameCount === 1), 'every calculated frame is presented');
   assert.equal(fast.messages.filter(item => item.message.type === 'audioData').length, 0, 'mute is the default');
   assert.equal(fast.drains(), fast.calls.length, 'audio is drained once per frame');
   fast.loop.stop();
   assert.equal(fast.timers.size, 0, 'stop cancels the loop');
 
-  const paused = loopHarness(EmulationLoop, 1, {frameMs: 2});
+  const paused = loopHarness(EmulationLoop, {frameMs: 2});
   paused.loop.start();
   paused.advance(1000);
   assert.equal(paused.calls.length, 2, 'a one-second timer pause runs one frame, without catching up');
@@ -79,8 +77,8 @@ function testClock(EmulationLoop) {
   assert.equal(paused.calls.length, 3, 'restart resets the deadline instead of replaying elapsed time');
   paused.loop.stop();
 
-  const slow = loopHarness(EmulationLoop, 1, {frameMs: 28, timerTurnaround: 4});
-  const unlimited = loopHarness(EmulationLoop, 1, {frameMs: 28, timerTurnaround: 4});
+  const slow = loopHarness(EmulationLoop, {frameMs: 28, timerTurnaround: 4});
+  const unlimited = loopHarness(EmulationLoop, {frameMs: 28, timerTurnaround: 4});
   unlimited.loop.setThrottle(false);
   slow.loop.start();
   unlimited.loop.start();
@@ -97,8 +95,6 @@ function testClock(EmulationLoop) {
   const packet = unlimited.messages.find(item => item.message.type === 'pixelData');
   assert.equal(packet.message.data, unlimited.frames[0]);
   assert.equal(packet.transfers[0], packet.message.data);
-  assert.equal(packet.message.frameCount, 1);
-  assert.equal(packet.message.completedFrames, 1);
   slow.loop.stop();
   unlimited.loop.stop();
 
@@ -116,17 +112,6 @@ function testClock(EmulationLoop) {
   toggled.advance(3);
   assert.equal(toggled.calls.length, 3, 'subsequent limited tasks respect the new deadline');
   toggled.loop.stop();
-
-  const lcdOff = loopHarness(EmulationLoop, 0);
-  lcdOff.loop.setInput(0, 8);
-  lcdOff.loop.setInput(0, 0);
-  lcdOff.loop.start();
-  lcdOff.runNext();
-  assert.equal(lcdOff.calls[0].action, 7);
-  assert.equal(lcdOff.calls[1].action, 15, 'LCD-off fallback clears the one-frame input latch');
-  assert.equal(lcdOff.messages.filter(item => item.message.type === 'pixelData').length, 2);
-  assert.equal(lcdOff.messages.find(item => item.message.type === 'pixelData').message.frameCount, 0);
-  lcdOff.loop.stop();
 
   const failed = loopHarness(EmulationLoop);
   failed.adapter.runFrame = () => { throw new Error('emulator failed'); };
@@ -370,7 +355,7 @@ async function testWorker(EmulationLoop) {
   const timers = new Map();
   const messages = [];
   const adapter = {
-    runFrame() { frameCalls++; return 1; },
+    runFrame() { frameCalls++; },
     framebuffer: () => new ArrayBuffer(160 * 144 * 4),
     popAudio: () => null,
     loadUploadedRom() { throw new Error('Unsupported ROM'); },
@@ -387,7 +372,7 @@ async function testWorker(EmulationLoop) {
         loop = this;
       }
     },
-    initialize: async () => ({adapter, runtime: {ruby: 'test'}}),
+    initialize: async () => adapter,
     postMessage: message => messages.push(message),
     self: {addEventListener: (_type, callback) => { listener = callback; }},
   });
@@ -400,16 +385,14 @@ async function testWorker(EmulationLoop) {
   assert.equal(messages[0].type, 'initialized', 'initialization precedes queued playback');
   assert.equal(frameCalls, 1);
   for (const data of [{type: 'loadROM'}, {type: 'loadPreInstalledRom', romName: 'missing.gb'}]) {
-    const before = loop.completedFrames;
     await send(data);
     assert.equal(loop.running, true, 'a failed ROM load resumes the previous emulator');
     assert.equal(timers.size, 1, 'recovery schedules exactly one loop');
-    assert.equal(loop.completedFrames, before + 1, 'a failed load preserves the frame counter');
     assert.equal(messages.at(-2).type, 'error');
     assert.equal(messages.at(-1).type, 'pixelData', 'the old emulator presents another frame');
     assert.equal(messages.filter(message => message.type === 'romLoaded').length, 0);
   }
-  await send({type: 'stopRubyboy'});
+  loop.stop();
   const pausedFrames = frameCalls;
   await send({type: 'loadROM'});
   assert.equal(loop.running, false, 'a failed load does not resume paused playback');
@@ -417,10 +400,9 @@ async function testWorker(EmulationLoop) {
   assert.equal(timers.size, 0);
   await send({type: 'loadPreInstalledRom', romName: 'tobu.gb'});
   assert.equal(loop.running, true, 'a successful ROM load still starts playback');
-  assert.equal(loop.completedFrames, 1, 'a successful load resets the frame counter');
   assert.equal(messages.filter(message => message.type === 'romLoaded').length, 1);
   adapter.runFrame = () => { throw new Error('Emulation failed'); };
-  await send({type: 'stopRubyboy'});
+  loop.stop();
   await send({type: 'startRubyboy'});
   assert.equal(loop.running, false, 'execution errors still stop the loop');
   assert.equal(timers.size, 0);
@@ -437,7 +419,7 @@ async function testDownload() {
       startEmulationWorker: callback => { initialize = callback; },
       fetch: async url => { const status = statuses[urls.length]; urls.push(url); return {ok: status === 200, status}; },
       WebAssembly: {compileStreaming: async response => { assert.equal(response.ok, true); compiled = true; return {}; }},
-      DefaultRubyVM: async () => ({vm: {eval: () => 'test'}, wasi: {fds: [null, null, null, {dir: {}}]}}),
+      DefaultRubyVM: async () => ({vm: {}, wasi: {fds: [null, null, null, {dir: {}}]}}),
       RubyboyVM: class {}, File: class {},
     });
     vm.runInContext(source, context);

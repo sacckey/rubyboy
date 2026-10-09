@@ -9,10 +9,8 @@ export function startEmulationWorker(initialize) {
     }
 
     async init() {
-      const { adapter, runtime } = await initialize();
-      this.adapter = adapter;
+      this.adapter = await initialize();
       this.loop = new EmulationLoop(this.adapter, (message, transfers) => postMessage(message, transfers));
-      return runtime;
     }
 
     async ensureInitialized() {
@@ -32,7 +30,6 @@ export function startEmulationWorker(initialize) {
         if (wasRunning) this.loop.start();
         return;
       }
-      this.loop.completedFrames = 0;
       postMessage({ type: 'romLoaded' });
       this.loop.start();
     }
@@ -41,11 +38,10 @@ export function startEmulationWorker(initialize) {
   const rubyboy = new Rubyboy();
   const handlers = {
     async initRubyboy() {
-      const runtime = await rubyboy.ensureInitialized();
-      postMessage({ type: 'initialized', runtime });
+      await rubyboy.ensureInitialized();
+      postMessage({ type: 'initialized' });
     },
     startRubyboy() { rubyboy.loop.start(); },
-    stopRubyboy() { rubyboy.loop.stop(); },
     setThrottle(data) { rubyboy.loop.setThrottle(data.enabled); },
     setMute(data) { rubyboy.loop.setMuted(data.enabled); },
     input(data) { rubyboy.loop.setInput(data.direction, data.action); },

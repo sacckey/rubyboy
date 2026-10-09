@@ -17,7 +17,6 @@ export class EmulationLoop {
     this.action = 0;
     this.directionPending = 0;
     this.actionPending = 0;
-    this.completedFrames = 0;
     this.loopHandle = null;
     this.loopTick = this.tick.bind(this);
     this.resetClock();
@@ -53,9 +52,9 @@ export class EmulationLoop {
     this.directionPending = this.actionPending = 0;
   }
 
-  sendFrame(frameCount) {
+  sendFrame() {
     const data = this.adapter.framebuffer();
-    this.emit({ type: 'pixelData', data, frameCount, completedFrames: this.completedFrames }, [data]);
+    this.emit({ type: 'pixelData', data }, [data]);
   }
 
   drainAudio() {
@@ -66,12 +65,10 @@ export class EmulationLoop {
   }
 
   runFrame() {
-    const frames = this.adapter.runFrame(...this.inputMasks());
-    this.completedFrames += frames;
-    // Even an LCD-off fallback advances a frame's CPU time.
+    this.adapter.runFrame(...this.inputMasks());
     this.clearPending();
     this.drainAudio();
-    this.sendFrame(frames);
+    this.sendFrame();
   }
 
   runThrottled() {
