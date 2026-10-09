@@ -61,8 +61,8 @@ The build needs Ruby, a native C/C++ toolchain, `make`, `curl` and `tar`
 
 ```sh
 BUNDLE_IGNORE_CONFIG=1 BUNDLE_ONLY=wasm bundle install
-ruby exe/rubyboy-wasm build
-ruby exe/rubyboy-wasm pack
+ruby wasm/rubyboy-wasm build
+ruby wasm/rubyboy-wasm pack
 ```
 
 - `build` compiles CRuby for WebAssembly into `docs/ruby-js.wasm`. The first run

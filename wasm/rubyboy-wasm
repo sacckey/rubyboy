@@ -52,7 +52,7 @@ end
 if ARGV == ['pack']
   build_root = File.expand_path(ENV['RUBY_WASM_ROOT'] || Bundler.root.to_s)
   objcopy = File.join(build_root, 'build', 'toolchain', 'wasi-sdk-24.0', 'bin', 'llvm-objcopy')
-  raise "WASI SDK 24.0 is missing; run 'ruby exe/rubyboy-wasm build' first or use 'pack --keep-debug'" unless File.executable?(objcopy)
+  raise "WASI SDK 24.0 is missing; run 'ruby wasm/rubyboy-wasm build' first or use 'pack --keep-debug'" unless File.executable?(objcopy)
 
   wasm_path = './docs/rubyboy.wasm'
   Tempfile.create(['rubyboy-', '.wasm'], File.dirname(wasm_path)) do |output|
