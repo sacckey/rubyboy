@@ -55,8 +55,8 @@ next to the ROM file.
 
 ## Benchmark
 
-On an Apple M4, Rubyboy runs at about 110 FPS on CRuby, 300 FPS with YJIT and
-600 FPS when compiled with Spinel. See [BENCHMARK.md](BENCHMARK.md) for the method and details.
+On an Apple M4, Rubyboy runs at about 110 FPS on CRuby, 290 FPS with YJIT and
+800 FPS when compiled with Spinel. See [BENCHMARK.md](BENCHMARK.md) for the method and details.
 
 ## Other ways to run
 
