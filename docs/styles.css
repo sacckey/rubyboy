@@ -214,6 +214,7 @@ body {
 
 .runtime-switch a:hover {
   background-color: #fdf4f4;
+  color: #a9222a;
 }
 
 .runtime-switch [aria-current] {
