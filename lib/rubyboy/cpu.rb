@@ -1071,7 +1071,7 @@ module Rubyboy
 
     def rlc8(x, cycles:)
       value = get_value(x)
-      value = (value << 1) | (value >> 7)
+      value = ((value << 1) | (value >> 7)) & 0xff
       set_value(x, value)
       update_flags(
         z: value == 0,
@@ -1085,7 +1085,7 @@ module Rubyboy
 
     def rrc8(x, cycles:)
       value = get_value(x)
-      value = (value >> 1) | (value << 7)
+      value = ((value >> 1) | (value << 7)) & 0xff
       set_value(x, value)
       update_flags(
         z: value == 0,
