@@ -1,4 +1,4 @@
-## [Unreleased]
+## [1.7.0] - 2026-10-10
 
 - Require Ruby 4.0 or higher
 - Keep audio output with --unlimited by dropping audio that cannot be played in time
