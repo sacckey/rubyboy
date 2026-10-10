@@ -192,7 +192,7 @@ body {
 
 .runtime-switch {
   display: flex;
-  border: 1px solid #8f201b;
+  border: 1px solid #a9222a;
   border-radius: 4px;
   overflow: hidden;
 }
@@ -204,7 +204,7 @@ body {
 }
 
 .runtime-switch > * + * {
-  border-left: 1px solid #8f201b;
+  border-left: 1px solid #a9222a;
 }
 
 .runtime-switch a {
@@ -217,8 +217,8 @@ body {
 }
 
 .runtime-switch [aria-current] {
-  background-color: #fbe9e8;
-  color: #8f201b;
+  background-color: #f9e6e6;
+  color: #a9222a;
   font-weight: bold;
 }
 
