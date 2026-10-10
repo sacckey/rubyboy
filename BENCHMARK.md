@@ -56,12 +56,13 @@ prints `Checksum: 661048662`.
 
 ## Results
 
-Measured on 2026-10-10 with Rubyboy `3484036` on a MacBook Air (Apple M4, macOS 15.5)
+Measured on 2026-10-10 with Rubyboy 1.7.0 (`44f834f`) on a MacBook Air (Apple M4, macOS 15.5)
 on AC power with other applications closed, using the commands above
 (`tobu.gb`, `--frames 1500 --warmup-frames 1500 --count 5`).
+All three printed `Checksum: 3889316277`.
 
 | Runtime | Version | FPS |
 | --- | --- | ---: |
-| CRuby | 4.0.7 | 114 |
-| CRuby + YJIT | 4.0.7 | 297 |
-| Spinel (native) | `2810a23` | 603 |
+| CRuby | 4.0.7 | 113 |
+| CRuby + YJIT | 4.0.7 | 294 |
+| Spinel (native) | `7d999f50c` | 799 |
