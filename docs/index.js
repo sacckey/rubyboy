@@ -3,7 +3,7 @@ const worker = new Worker('worker.js', { type: 'module' });
 const playbackOptions = new URLSearchParams(window.location.search);
 const throttleToggle = document.getElementById('throttle-toggle');
 const muteToggle = document.getElementById('mute-toggle');
-throttleToggle.checked = playbackOptions.get('throttle') !== '0';
+throttleToggle.checked = playbackOptions.get('throttle') === '1';
 muteToggle.checked = playbackOptions.get('mute') !== '0';
 
 class AudioPlayer {
