@@ -69,9 +69,9 @@ module Rubyboy
       def dac_output
         return 0.0 unless @dac_enabled && @enabled
 
-        ret = ((0xf & (
+        ret = (0xf & (
           @wave_ram[@wave_duty_position >> 1] >> ((@wave_duty_position & 0x01) << 2)
-        ))) >> @volume_shift
+        )) >> @volume_shift
 
         (ret / 7.5) - 1.0
       end

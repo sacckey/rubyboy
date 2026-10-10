@@ -1,5 +1,6 @@
 ## [Unreleased]
 
+- Require Ruby 4.0 or higher
 - Keep audio output with --unlimited by dropping audio that cannot be played in time
 - Remove the --no-audio player option
 - Remove rubyboy-bench --render and --json, and the SDL 2.0.18 requirement

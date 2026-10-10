@@ -2,7 +2,7 @@
 
 RSpec.describe Rubyboy::Audio do
   describe '#queue' do
-    let(:audio) { described_class.allocate.tap { _1.instance_variable_set(:@device, 42) } }
+    let(:audio) { described_class.allocate.tap { it.instance_variable_set(:@device, 42) } }
 
     before { allow(Rubyboy::SDL).to receive(:QueueAudio) }
 
