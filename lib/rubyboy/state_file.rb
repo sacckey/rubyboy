@@ -32,9 +32,8 @@ module Rubyboy
       return warn_and_false("ROM checksum mismatch for state file #{path}") unless checksum == rom.global_checksum_value
 
       # State files are local emulator snapshots written by this process.
-      # rubocop:disable Security/MarshalLoad
+      # rubocop:disable-next Security/MarshalLoad
       yield Marshal.load(data.byteslice(HEADER_SIZE..))
-      # rubocop:enable Security/MarshalLoad
       true
     rescue StandardError => e
       warn "[rubyboy] failed to read state file #{path}: #{e.message}"

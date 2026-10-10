@@ -5,6 +5,7 @@ require 'ffi'
 module Rubyboy
   module SDL
     extend FFI::Library
+
     ffi_lib 'SDL2'
 
     INIT_TIMER = 0x01

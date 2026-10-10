@@ -1,6 +1,14 @@
+inherit_mode:
+  merge:
+    - Exclude
+
 AllCops:
-  TargetRubyVersion: 3.2
+  TargetRubyVersion: 4.0
   NewCops: enable
+  # Ruby sources downloaded and built for ruby.wasm
+  Exclude:
+    - build/**/*
+    - rubies/**/*
 
 Lint/AmbiguousOperatorPrecedence:
   Enabled: false
@@ -36,6 +44,15 @@ Metrics/MethodLength:
   Enabled: false
 
 Naming/MethodParameterName:
+  Enabled: false
+
+Naming/PredicateMethod:
+  Enabled: false
+
+Style/BitwisePredicate:
+  Enabled: false
+
+Style/ComparableBetween:
   Enabled: false
 
 Style/Documentation:

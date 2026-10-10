@@ -18,7 +18,7 @@ A Game Boy emulator written in Ruby
 
 ## Installation
 
-Rubyboy requires Ruby 3.2 or higher and [SDL2](https://wiki.libsdl.org/SDL2/Installation).
+Rubyboy requires Ruby 4.0 or higher and [SDL2](https://wiki.libsdl.org/SDL2/Installation).
 
     $ gem install rubyboy
 
