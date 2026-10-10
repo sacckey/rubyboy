@@ -86,6 +86,10 @@ def main():
     for asset in ('favicon.png', 'styles.css', 'index.js', 'logo-light-23.svg'):
         html = html.replace(f'"./{asset}"', f'"../{asset}"')
     html = html.replace('running on ruby.wasm', 'compiled with Spinel to WebAssembly')
+    html = html.replace('<title>Ruby Boy (ruby.wasm)</title>', '<title>Ruby Boy (Spinel)</title>')
+    html = html.replace('<span aria-current="page">ruby.wasm</span>\n            <a href="./spinel/">Spinel</a>',
+                        '<a href="../">ruby.wasm</a>\n            <span aria-current="page">Spinel</span>')
+    html = html.replace('CRuby compiled to WebAssembly', 'Ruby compiled to C, then to WebAssembly')
     html = html.replace('property="og:url" content="https://sacckey.github.io/rubyboy/"',
                         'property="og:url" content="https://sacckey.github.io/rubyboy/spinel/"')
     (output / 'index.html').write_text(html)

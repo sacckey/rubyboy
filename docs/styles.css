@@ -190,6 +190,44 @@ body {
   margin-bottom: 10px;
 }
 
+.runtime-switch {
+  display: flex;
+  border: 1px solid #8f201b;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.runtime-switch > * {
+  flex: 1;
+  padding: 6px 0;
+  text-align: center;
+}
+
+.runtime-switch > * + * {
+  border-left: 1px solid #8f201b;
+}
+
+.runtime-switch a {
+  color: #444444;
+  text-decoration: none;
+}
+
+.runtime-switch a:hover {
+  background-color: #fdf4f4;
+}
+
+.runtime-switch [aria-current] {
+  background-color: #fbe9e8;
+  color: #8f201b;
+  font-weight: bold;
+}
+
+.runtime-note {
+  margin: 6px 0 0;
+  font-size: 0.9em;
+  color: #666666;
+}
+
 .footer {
   background-color: #cc342d;
   color: white;

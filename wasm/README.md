@@ -46,13 +46,16 @@ pages work without building anything.
 ## Playback options
 
 The **Limit to 60 FPS** and **Mute** checkboxes change playback while running.
-Both are checked by default; URL parameters set their initial state.
+By default the speed is unlimited, so the page shows how fast each build runs,
+and the sound is muted. URL parameters set their initial state.
 
 | URL | Speed | Sound |
 | --- | --- | --- |
-| `/` | 60 FPS | Muted |
-| `/?throttle=0` | Unlimited | Muted |
-| `/?mute=0` | 60 FPS | Starts at the first key press or click |
+| `/` | Unlimited | Muted |
+| `/?throttle=1` | 60 FPS | Muted |
+| `/?throttle=1&mute=0` | 60 FPS | Starts at the first key press or click |
+
+The **Runtime** section on each page names the build and links to the other one.
 
 ## ruby.wasm build
 

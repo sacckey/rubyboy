@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <title>Ruby Boy</title>
+    <title>Ruby Boy (ruby.wasm)</title>
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="author" content="sacckey" />
@@ -42,6 +42,14 @@
         <img src="./logo-light-23.svg" alt="Ruby Boy">
       </div>
       <div class="control-panel">
+        <section id="runtime">
+          <h3>Runtime</h3>
+          <div class="runtime-switch">
+            <span aria-current="page">ruby.wasm</span>
+            <a href="./spinel/">Spinel</a>
+          </div>
+          <p class="runtime-note">CRuby compiled to WebAssembly</p>
+        </section>
         <section id="rom-select">
           <h3>ROM Select</h3>
           <select id="rom-select-box" class="rom-select-box" disabled >
@@ -66,7 +74,7 @@
           <h3>Performance</h3>
           <p>FPS: <span id="fps-display">0</span></p>
           <label>
-            <input type="checkbox" id="throttle-toggle" checked />
+            <input type="checkbox" id="throttle-toggle" />
             Limit to 60 FPS
           </label>
           <label>
