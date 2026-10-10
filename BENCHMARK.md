@@ -26,8 +26,8 @@ bundle exec ruby --yjit -Ilib exe/rubyboy-bench \
 
 Each trial starts with a fresh emulator and runs the CPU, timer, PPU and APU
 without input, saves, drawing, audio output or real-time synchronization.
-The command prints each trial's duration and the aggregate FPS (total measured
-frames divided by total measured time).
+The command prints each trial's duration, the aggregate FPS (total measured
+frames divided by total measured time) and a checksum of the final frame.
 
 ## Spinel
 
@@ -48,6 +48,11 @@ Use the same machine, ROM, `--frames`, `--warmup-frames` and `--count` for every
 runtime. Use a warmup so that YJIT has compiled the hot code before measurement.
 Record the Ruby version (`ruby -v`) or Spinel revision (`spinel --version`) and the
 Rubyboy revision with each result.
+
+The checksum depends only on the ROM and the total of `--warmup-frames` and `--frames`,
+so every runtime must print the same value. A different value means that runtime
+emulated incorrectly. For example, with the bundled ROM, `--frames 600 --count 1`
+prints `Checksum: 661048662`.
 
 ## Results
 

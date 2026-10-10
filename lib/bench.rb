@@ -10,6 +10,7 @@ module Rubyboy
       validate_integer(:warmup_frames, warmup_frames, 0)
 
       time_sum = 0
+      frame_checksum = 0
       count.times do |i|
         emulator = Rubyboy::EmulatorHeadless.new(rom_path)
         run_frames(emulator, warmup_frames)
@@ -19,9 +20,12 @@ module Rubyboy
         puts "#{i + 1}: #{time / 1_000_000_000.0} sec"
 
         time_sum += time
+        frame_checksum = checksum(emulator.framebuffer)
       end
 
       puts "FPS: #{frames * count * 1_000_000_000.0 / time_sum}"
+      # Every trial ends on the same frame. A different value on another runtime means it emulated incorrectly.
+      puts "Checksum: #{frame_checksum}"
     end
 
     private
@@ -31,6 +35,11 @@ module Rubyboy
 
       requirement = minimum == 0 ? 'a nonnegative integer' : 'a positive integer'
       raise ArgumentError, "#{name} must be #{requirement}"
+    end
+
+    # Integer arithmetic only, so CRuby and ahead-of-time compilers such as Spinel produce the same value.
+    def checksum(framebuffer)
+      framebuffer.reduce(0) { |hash, pixel| ((hash * 31) + pixel) & 0xffffffff }
     end
 
     def run_frames(emulator, frames)

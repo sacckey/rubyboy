@@ -4,6 +4,8 @@
 - Keep audio output with --unlimited by dropping audio that cannot be played in time
 - Remove the --no-audio player option
 - Remove rubyboy-bench --render and --json, and the SDL 2.0.18 requirement
+- Print a checksum of the final frame from rubyboy-bench to check that a runtime emulated correctly
+- Run rubyboy-bench without loading SDL
 - Run the bundled Tobu Tobu Girl ROM when rubyboy or rubyboy-bench gets no ROM path, from any directory
 - Read ROM files in binary mode, which fixes loading them on Windows
 - Make the APU duty tables shareable between Ractors

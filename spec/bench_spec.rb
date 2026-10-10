@@ -5,20 +5,20 @@ require 'open3'
 require 'rbconfig'
 
 RSpec.describe Rubyboy::Bench do
-  let(:emulator) { instance_double(Rubyboy::EmulatorHeadless, step: nil) }
+  let(:emulator) { instance_double(Rubyboy::EmulatorHeadless, step: nil, framebuffer: [1, 2]) }
 
   before do
     allow(Rubyboy::EmulatorHeadless).to receive(:new).and_return(emulator)
   end
 
   it 'starts each trial from a fresh emulator, warms up identically, and aggregates measured durations' do
-    second_emulator = instance_double(Rubyboy::EmulatorHeadless, step: nil)
+    second_emulator = instance_double(Rubyboy::EmulatorHeadless, step: nil, framebuffer: [1, 2])
     allow(Rubyboy::EmulatorHeadless).to receive(:new).with('test.gb').and_return(emulator, second_emulator)
     allow(Process).to receive(:clock_gettime).with(Process::CLOCK_MONOTONIC, :nanosecond).and_return(1_000_000_000, 2_000_000_000, 3_000_000_000, 5_000_000_000)
 
     expect do
       described_class.new.run(count: 2, frames: 3, warmup_frames: 2, rom_path: 'test.gb')
-    end.to output("1: 1.0 sec\n2: 2.0 sec\nFPS: 2.0\n").to_stdout
+    end.to output("1: 1.0 sec\n2: 2.0 sec\nFPS: 2.0\nChecksum: 33\n").to_stdout
 
     expect(Rubyboy::EmulatorHeadless).to have_received(:new).with('test.gb').twice
     expect(emulator).to have_received(:step).exactly(5).times
@@ -57,6 +57,13 @@ RSpec.describe 'rubyboy-bench executable' do
     expect(status.success?).to be(true), stderr
     expect(stdout).to match(/^1: .* sec$/)
     expect(stdout).to match(/^FPS: /)
+  end
+
+  it 'prints the same checksum of the final frame on every run' do
+    stdout, stderr, status = Open3.capture3(RbConfig.ruby, '-Ilib', 'exe/rubyboy-bench', '--count', '2', '--frames', '60', chdir: repository_root)
+
+    expect(status.success?).to be(true), stderr
+    expect(stdout).to end_with("Checksum: 4059938609\n")
   end
 
   it 'rejects an invalid count with a failing exit status' do
