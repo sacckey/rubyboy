@@ -1,3 +1,7 @@
+## [1.7.1] - 2026-10-11
+
+- Fix RLC and RRC on memory writing values over a byte, which could stop the Spinel browser build
+
 ## [1.7.0] - 2026-10-10
 
 - Require Ruby 4.0 or higher
