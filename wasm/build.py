@@ -92,6 +92,7 @@ def main():
     html = html.replace('CRuby compiled to WebAssembly', 'Ruby compiled to C, then to WebAssembly')
     html = html.replace('property="og:url" content="https://sacckey.github.io/rubyboy/"',
                         'property="og:url" content="https://sacckey.github.io/rubyboy/spinel/"')
+    html = html.replace('property="og:title" content="Ruby Boy"', 'property="og:title" content="Ruby Boy (Spinel)"')
     (output / 'index.html').write_text(html)
     size = (output / 'rubyboy-spinel.wasm').stat().st_size
     print(f"Built {output / 'rubyboy-spinel.wasm'}: {size:,} bytes")
